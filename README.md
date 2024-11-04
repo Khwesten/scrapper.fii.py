@@ -1,21 +1,21 @@
 # scrapper.fii.py
 
-´´´Shell
+```shell
 pip install poetry 
-´´´
+```
 
-´´´Shell
+```shell
 poetry install
-´´´
+```
 
-´´´Shell
+```shell
 python main.py
-´´´
+```
 
-´´´Shell
+```shell
 black .
-´´´
+```
 
-´´´Shell
+```shell
 autoflake --in-place --remove-all-unused-imports --recursive -v .
-´´´
+```
