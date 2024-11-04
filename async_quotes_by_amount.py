@@ -1,6 +1,4 @@
 import logging
-
-import pathlib
 import sys
 
 from aiohttp import ClientSession
@@ -11,9 +9,9 @@ import re
 import os
 from typing import IO
 from lxml import etree
-from io import StringIO
 from decimal import *
 from dataclasses import dataclass
+from app_config import CSV_DIR
 
 logger = logging.getLogger("async_fii_req")
 logging.getLogger("chardet.charsetprober").disabled = True
@@ -108,14 +106,12 @@ class StatusInvestAdapter:
                 return None
 
     async def _fetch_html(self, url: str) -> str:
-        # await asyncio.sleep(random.randint(3,6))
-        response = await self.session.request(method="GET", url=url)
-        response.raise_for_status()
+        async with self.session.get(url) as response:
+            response.raise_for_status()
 
-        logger.info("GOT response [%s] for URL: %s", response.status, url)
+            logger.info("GOT response [%s] for URL: %s", response.status, url)
 
-        html = await response.text()
-        return html
+            return await response.text()
 
 
 class CSVAdapter:
@@ -244,8 +240,7 @@ class Fetch:
                 if not fii_domain:
                     return None
 
-                here = pathlib.Path(__file__).parent
-                outpath = here.joinpath("csv/fii_division.csv")
+                outpath = CSV_DIR.joinpath("fii_division.csv")
 
                 await CSVAdapter(outpath).save(fii_domain)
 
@@ -281,13 +276,7 @@ class AsyncRequestService:
         for url in self.urls:
             queue.put_nowait(url)
 
-        here = pathlib.Path(__file__).parent
-        outpath = here.joinpath("csv/fii_division.csv")
-
-        output_dir = os.path.dirname(outpath)
-
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
+        outpath = CSV_DIR.joinpath("fii_division.csv")
 
         with open(outpath, "w") as outfile:
             outfile.write(
@@ -334,7 +323,10 @@ fii_codes = [
     "VILG11",
 ]
 
-max_concurrent_requests = 4
 
+if not os.path.exists(CSV_DIR):
+    os.makedirs(CSV_DIR)
+
+max_concurrent_requests = 4
 async_request_service = AsyncRequestService(fii_codes, max_concurrent_requests)
 asyncio.run(async_request_service.execute())

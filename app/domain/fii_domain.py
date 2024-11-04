@@ -15,5 +15,5 @@ class FiiDomain:
     last_price: Decimal
     last_dividend: Decimal
     dy_12: Decimal
-    start_date: Optional[date]
-    dialy_liquidity: Optional[Decimal]
+    start_date: Optional[date] = None
+    dialy_liquidity: Optional[Decimal] = Decimal(0)

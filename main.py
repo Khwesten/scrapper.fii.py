@@ -1,6 +1,6 @@
 import asyncio
 import os
-from app_config import ROOT_DIR
+from app_config import CSV_DIR
 from app.lib.csv_output_writer import CSVOutputWriter
 from app.usecases.fii_analyser_usecase import FiiAnalyserUsecase
 
@@ -20,18 +20,18 @@ tickers = [
     "HGRU11",
 ]
 
-output_path = f"{ROOT_DIR}/csv/fiis.csv"
+if not os.path.exists(CSV_DIR):
+    os.makedirs(CSV_DIR)
+
+output_path = CSV_DIR.joinpath("fiis.csv")
+
 output_dir = os.path.dirname(output_path)
-
-if not os.path.exists(output_dir):
-    os.makedirs(output_dir)
-
 loop = asyncio.get_event_loop()
 
 
 async def main():
     analyser = FiiAnalyserUsecase(percentage=8)
-    fiis = await analyser.execute()
+    fiis = await analyser.execute(tickers)
     CSVOutputWriter(output_path).execute(fiis)
 
 

@@ -52,7 +52,7 @@ class StatusInvestGateway(FiiGateway):
             for fii in json:
                 fii_list.append(fii["url"].split("/")[-1])
 
-            return await fii_list
+            return fii_list
 
     async def get(self, ticker: str) -> Optional[FiiDomain]:
         found = None
