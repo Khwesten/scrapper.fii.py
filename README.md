@@ -9,13 +9,11 @@ poetry install
 ```
 
 ```shell
-python main.py
+make format
 ```
 
 ```shell
-black .
+make run
 ```
 
-```shell
-autoflake --in-place --remove-all-unused-imports --recursive -v .
-```
+SWAGGER: http://127.0.0.1:8000/docs

@@ -1,5 +1,6 @@
-from datetime import timedelta
 import datetime
+from datetime import timedelta
+
 from app.domain.fii_domain import FiiDomain
 from app.domain.rules.fii_rule import FiiRule
 

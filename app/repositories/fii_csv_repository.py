@@ -1,24 +1,33 @@
 import csv
 import os
-from typing import Optional, Dict
 from datetime import datetime
+from typing import Dict, List, Optional
+
 from app.domain.fii_domain import FiiDomain
 from app.repositories.fii_repository import FiiRepository
 from app_config import CSV_DIR
 
 
 class FiiCSVRepository(FiiRepository):
-    def __init__(self) -> None:
-        self.csv_path = CSV_DIR.joinpath("fiis_db.csv")
+    def __init__(self, csv_path: Optional[str] = None) -> None:
+        self.csv_path = csv_path or CSV_DIR.joinpath("fiis_db.csv")
         self.fiis = self._load_fiis()
 
     async def add(self, fii: FiiDomain) -> int:
-        self.fiis[fii.ticker] = fii
+        fii_persisted = self.fiis.get(fii.ticker.lower())
+
+        if fii_persisted:
+            return 0
+
+        self.fiis[fii.ticker.lower()] = fii
         self._save_fiis()
         return 1
 
     async def get(self, ticker: str) -> Optional[FiiDomain]:
-        return self.fiis.get(ticker)
+        return self.fiis.get(ticker.lower())
+
+    async def list(self) -> List[FiiDomain]:
+        return self.fiis.values()
 
     def _load_fiis(self) -> Dict[str, FiiDomain]:
         fiis = {}
@@ -26,7 +35,7 @@ class FiiCSVRepository(FiiRepository):
             with open(self.csv_path, mode="r", newline="") as file:
                 reader = csv.DictReader(file)
                 for row in reader:
-                    fiis[row["ticker"]] = self._build_fii(row)
+                    fiis[row["ticker"].lower()] = self._build_fii(row)
         return fiis
 
     def _save_fiis(self) -> None:

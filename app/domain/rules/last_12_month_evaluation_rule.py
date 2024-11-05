@@ -1,4 +1,5 @@
 from decimal import Decimal
+
 from app.domain.fii_domain import FiiDomain
 from app.domain.rules.fii_rule import FiiRule
 

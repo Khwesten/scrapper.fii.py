@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+
 from app.domain.fii_domain import FiiDomain
 
 

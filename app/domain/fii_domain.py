@@ -1,11 +1,11 @@
 from datetime import date
 from decimal import Decimal
 from typing import Optional
-from attr import dataclass
+
+from pydantic import BaseModel
 
 
-@dataclass
-class FiiDomain:
+class FiiDomain(BaseModel):
     ticker: str
     p_vp: Decimal
     segment: str

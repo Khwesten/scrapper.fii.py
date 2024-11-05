@@ -1,21 +1,21 @@
 import decimal
 from typing import List, Optional
-from aiohttp import ClientSession
+
 import aiohttp
-from app.domain.fii_domain import FiiDomain
-from app.lib.data_crawler_converter import DataCrawlerConverter
-from app.lib.logger import logger
+from aiohttp import ClientSession
 from lxml import etree
+
+from app.domain.fii_domain import FiiDomain
+from app.libs.data_crawler_converter import DataCrawlerConverter
+from app.libs.logger import logger
 
 
 class FiiGateway:
     session: ClientSession
 
-    async def list(self) -> List[str]:
-        ...
+    async def list(self) -> List[str]: ...
 
-    async def get(self, ticker: str) -> FiiDomain:
-        ...
+    async def get(self, ticker: str) -> Optional[FiiDomain]: ...
 
 
 class StatusInvestGateway(FiiGateway):
@@ -90,8 +90,8 @@ class StatusInvestGateway(FiiGateway):
 
                 segment = tree.xpath(self.XPATH_SEGMENT)[0].lower()
                 duration = tree.xpath(self.XPATH_DURATION)[0].lower()
-                quota_holder = tree.xpath(self.XPATH_QUOTA_HOLDER)[0].lower()
-                quota_quantity = tree.xpath(self.XPATH_QUOTA_QUANTITY)[0].lower()
+                tree.xpath(self.XPATH_QUOTA_HOLDER)[0].lower()
+                tree.xpath(self.XPATH_QUOTA_QUANTITY)[0].lower()
 
                 start_date = DataCrawlerConverter.to_date_or_none(start_date_element)
                 p_vp = DataCrawlerConverter.to_decimal(p_vp_element)
@@ -101,6 +101,8 @@ class StatusInvestGateway(FiiGateway):
                 last_dividend = DataCrawlerConverter.to_decimal(last_dividend_element)
                 dy_12 = DataCrawlerConverter.to_decimal(dy_12_element)
                 dialy_liquidity = DataCrawlerConverter.to_decimal_or_none(dialy_liquidity_element)
+
+                logger.info(f"{ticker.upper()} CONVERTED")
 
                 return FiiDomain(
                     ticker=ticker,

@@ -1,6 +1,8 @@
+[tool.isort]
+profile = "black"
+
 [tool.black]
 line-length = 120
-max-line-length = 120
 target-version = ['py39']
 include = '\.pyi?$'
 # 'extend-exclude' excludes files or directories in addition to the defaults
@@ -22,12 +24,27 @@ packages = [{include = "scrapper"}]
 
 [tool.poetry.dependencies]
 python = "^3.9"
+fastapi = {extras = ["standard"], version = "^0.115.4"}
+pydantic = "^2.9.2"
+starlette = "^0.41.2"
+aiodns = "^3.2.0"
+aiofiles = "^24.1.0"
+aiohttp = "^3.10.10"
+lxml = "^5.3.0"
 
 
 [tool.poetry.group.dev.dependencies]
-autoflake = "^2.3.1"
 black = "^24.10.0"
+autoflake = "^2.3.1"
+isort = "^5.13.2"
+pytest = "^8.3.3"
+pytest-asyncio = "^0.24.0"
+factory-boy = "^3.3.1"
+faker = "^30.8.2"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]

@@ -5,5 +5,4 @@ class FiiRule:
     MESSAGE: str = None
 
     @classmethod
-    def validate(cls, fii: FiiDomain) -> bool:
-        ...
+    def validate(cls, fii: FiiDomain) -> bool: ...
