@@ -5,6 +5,7 @@ BASE_URL = "http://localhost:8080"
 TIMEOUT = 30.0
 
 
+@pytest.mark.timeout(120)
 class TestFIIScraperE2E:
 
     @pytest.fixture

@@ -2,6 +2,7 @@ import httpx
 import pytest
 
 
+@pytest.mark.timeout(60)
 class TestDashboardE2E:
 
     @pytest.fixture

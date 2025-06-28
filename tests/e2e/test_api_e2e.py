@@ -2,6 +2,7 @@ import httpx
 import pytest
 
 
+@pytest.mark.timeout(120)
 class TestAPIE2E:
 
     @pytest.fixture

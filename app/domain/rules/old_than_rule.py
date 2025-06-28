@@ -1,5 +1,4 @@
-import datetime
-from datetime import timedelta
+from datetime import date, timedelta
 
 from app.domain.fii_domain import FiiDomain
 from app.domain.rules.fii_rule import FiiRule
@@ -14,5 +13,5 @@ class OldThanRule(FiiRule):
         if fii.start_date is None:
             return True
 
-        today = datetime.today().date()
+        today = date.today()
         return fii.start_date <= today - cls.ONE_YEAR
