@@ -142,7 +142,7 @@ jobs:
           AWS_DEFAULT_REGION: us-east-1
           DYNAMODB_ENDPOINT: http://localhost:8000
           DYNAMODB_TABLE_NAME: fiis
-        run: poetry run pytest tests/integration/ -v --tb=short
+        run: poetry run pytest tests/integration/ -v --tb=short --timeout=30
 
   e2e-tests:
     name: E2E Tests
