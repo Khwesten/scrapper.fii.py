@@ -20,14 +20,18 @@ class FiiAnalyserUsecase:
 
     async def execute(self, tickers: List[str] = None) -> List[FiiDomain]:
         fiis = []
-        tickers = tickers or await self.fii_gateway.list()
-
-        for ticker in tickers:
-            fii = await self._get(ticker=ticker)
-            if fii is not None:
-                fiis.append(fii)
-
-        await self.fii_gateway.close()
+        
+        if tickers:
+            for ticker in tickers:
+                fii = await self._get(ticker=ticker)
+                if fii is not None:
+                    fiis.append(fii)
+        else:
+            all_fiis = await self.fii_repository.list()
+            for fii in all_fiis:
+                is_valid = self.fii_validator_factory.build().validate(fii)
+                if is_valid and fii.dy_12 >= self.percentage and fii.last_dividend > 0 and fii.last_price > 0:
+                    fiis.append(fii)
 
         return fiis
 

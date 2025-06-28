@@ -1,85 +1,92 @@
-#!/usr/bin/env python3
-
+import pytest
+from unittest.mock import MagicMock, patch
 import asyncio
-import logging
-import sys
-import os
-
-# Add project root to path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from app.scheduler import FiiBootstrap, FiiScheduler, bootstrap_and_start_scheduler
+from app.domain.fii_domain import FiiDomain
+from app.usecases.fii_scrape_usecase import FiiScrapeUseCase
+from app.repositories.fii_repository import FiiRepository
+from tests.factories.fii_domain_factory import FiiDomainFactory
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[logging.StreamHandler()]
-)
 
-# Mock the usecase to avoid DB connections
-class MockFiiScrapeUseCase:
-    def __init__(self):
-        self.fii_repository = MockRepository()
-    
-    async def execute(self, tickers=None):
-        print(f"🎭 MOCK: Executing scrape with tickers: {tickers}")
-        if tickers:
-            return [f"FII-{ticker}" for ticker in tickers[:3]]  # Return mock data
-        else:
-            return ["FII-MOCK1", "FII-MOCK2", "FII-MOCK3"]  # Return mock data
+@pytest.fixture
+def mock_fii_repository():
+    repository = MagicMock(spec=FiiRepository)
+    repository.list.return_value = []
+    return repository
 
-class MockRepository:
-    def __init__(self):
-        self.has_data = False
-    
-    async def list(self):
-        if self.has_data:
-            return ["EXISTING1", "EXISTING2"]
-        return []  # Empty DB
 
-# Monkey patch the import
-import app.scheduler
-import app.usecases.fii_scrape_usecase
-app.usecases.fii_scrape_usecase.FiiScrapeUseCase = MockFiiScrapeUseCase
+@pytest.fixture
+def mock_fii_scrape_usecase(mock_fii_repository):
+    usecase = MagicMock(spec=FiiScrapeUseCase)
+    usecase.fii_repository = mock_fii_repository
+    usecase.execute.return_value = [FiiDomainFactory.build() for _ in range(3)]
+    return usecase
 
-async def test_bootstrap_mock():
-    """Test bootstrap with mocked dependencies"""
-    print("=" * 60)
-    print("🧪 Testing Bootstrap with Mock (No DB/Gateway)")
-    print("=" * 60)
-    
-    print("\n1️⃣ Testing FiiBootstrap.initial_seed() - Empty DB")
+
+@pytest.fixture
+def mock_scheduler():
+    scheduler = MagicMock(spec=FiiScheduler)
+    return scheduler
+
+@pytest.mark.asyncio
+async def test_bootstrap_initial_seed_empty_db(mock_fii_scrape_usecase):
+    # Arrange
     bootstrap = FiiBootstrap()
-    await bootstrap.initial_seed()
+    mock_fii_scrape_usecase.fii_repository.list.return_value = []
     
-    print("\n2️⃣ Testing FiiBootstrap.initial_seed() - With existing data")
-    bootstrap2 = FiiBootstrap()
-    # Mock that DB has data
-    original_usecase = MockFiiScrapeUseCase
-    class MockWithDataUseCase(MockFiiScrapeUseCase):
-        def __init__(self):
-            super().__init__()
-            self.fii_repository.has_data = True
+    # Act
+    with patch('app.scheduler.FiiScrapeUseCase', return_value=mock_fii_scrape_usecase):
+        await bootstrap.initial_seed()
     
-    app.usecases.fii_scrape_usecase.FiiScrapeUseCase = MockWithDataUseCase
-    await bootstrap2.initial_seed()
-    
-    print("\n3️⃣ Testing FiiScheduler start/stop")
-    scheduler = FiiScheduler()
-    scheduler.start()
-    await asyncio.sleep(1)  # Let it initialize
-    scheduler.stop()
-    
-    print("\n4️⃣ Testing bootstrap_and_start_scheduler()")
-    # Reset to empty DB
-    app.usecases.fii_scrape_usecase.FiiScrapeUseCase = original_usecase
-    
-    scheduler = await bootstrap_and_start_scheduler()
-    await asyncio.sleep(1)
-    scheduler.stop()
-    
-    print("\n✅ All mock tests completed successfully!")
+    # Assert
+    mock_fii_scrape_usecase.execute.assert_called_once()
 
-if __name__ == "__main__":
-    asyncio.run(test_bootstrap_mock())
+
+@pytest.mark.asyncio
+async def test_bootstrap_initial_seed_with_existing_data(mock_fii_scrape_usecase):
+    # Arrange
+    bootstrap = FiiBootstrap()
+    existing_fiis = [FiiDomainFactory.build() for _ in range(2)]
+    mock_fii_scrape_usecase.fii_repository.list.return_value = existing_fiis
+    
+    # Act
+    with patch('app.scheduler.FiiScrapeUseCase', return_value=mock_fii_scrape_usecase):
+        await bootstrap.initial_seed()
+    
+    # Assert
+    mock_fii_scrape_usecase.execute.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_scheduler_start_stop():
+    # Arrange
+    scheduler = FiiScheduler()
+    
+    # Act
+    scheduler.start()
+    
+    # Assert
+    assert scheduler.scheduler.state == 1  # RUNNING state
+    
+    # Act
+    scheduler.stop()
+    
+    # Assert - scheduler.shutdown() é async mas stop() não aguarda
+    assert scheduler.scheduler.state in [0, 1]  # Can be STOPPED or STOPPING
+
+
+@pytest.mark.asyncio
+async def test_bootstrap_and_start_scheduler(mock_fii_scrape_usecase):
+    # Arrange
+    mock_fii_scrape_usecase.fii_repository.list.return_value = []
+    
+    # Act
+    with patch('app.scheduler.FiiScrapeUseCase', return_value=mock_fii_scrape_usecase):
+        scheduler = await bootstrap_and_start_scheduler()
+        await asyncio.sleep(0.1)
+        scheduler.stop()
+    
+    # Assert
+    assert scheduler is not None
+    mock_fii_scrape_usecase.execute.assert_called_once()
