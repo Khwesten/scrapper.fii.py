@@ -20,7 +20,7 @@ class FiiAnalyserUsecase:
 
     async def execute(self, tickers: List[str] = None) -> List[FiiDomain]:
         fiis = []
-        
+
         if tickers:
             for ticker in tickers:
                 fii = await self._get(ticker=ticker)

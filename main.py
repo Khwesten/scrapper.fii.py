@@ -1,39 +1,39 @@
-import os
 import asyncio
-from typing import List, Optional, Dict
 from contextlib import asynccontextmanager
+from typing import List, Optional
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from app.domain.fii_domain import FiiDomain
-from app.usecases.fii_list_usecase import FiiListUseCase
-from app.usecases.fii_magic_number_usecase import FiiMagicNumberUseCase, MagicNumberResponse
-from app.usecases.fii_scrape_usecase import FiiScrapeUseCase
 from app.repositories.fii_repository_factory import FiiRepositoryFactory
-from app.scheduler import bootstrap_and_start_scheduler
+from app.usecases.fii_list_usecase import FiiListUseCase
+from app.usecases.fii_magic_number_usecase import (
+    FiiMagicNumberUseCase,
+    MagicNumberResponse,
+)
 
 templates = Jinja2Templates(directory="templates")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    from app.scheduler import FiiScheduler, FiiBootstrap
-    
+    from app.scheduler import FiiBootstrap, FiiScheduler
+
     scheduler = FiiScheduler()
     scheduler.start()
-    
+
     # Start bootstrap in background without blocking app startup
     bootstrap = FiiBootstrap()
     asyncio.create_task(bootstrap.initial_seed())
-    
+
     yield
     scheduler.stop()
 
 
 app = FastAPI(
-    title="FII Scraper API", 
+    title="FII Scraper API",
     version="2.0.0",
     description="""
     ## 🏢 FII Scraper API v2.0
@@ -83,7 +83,7 @@ app = FastAPI(
 async def root():
     """
     ## 🏠 Página Inicial
-    
+
     Redireciona automaticamente para o dashboard visual dos FIIs.
     """
     return RedirectResponse(url="/dashboard", status_code=302)
@@ -93,9 +93,9 @@ async def root():
 async def list_fiis():
     """
     ## 📊 Listar todos os FIIs
-    
+
     Retorna uma lista completa de todos os Fundos de Investimento Imobiliário disponíveis no sistema.
-    
+
     ### Informações Retornadas:
     - **ticker**: Código do FII (ex: BCRI11)
     - **p_vp**: Preço sobre Valor Patrimonial
@@ -104,7 +104,7 @@ async def list_fiis():
     - **last_price**: Último preço de negociação
     - **dy_12**: Dividend Yield dos últimos 12 meses
     - **daily_liquidity**: Liquidez diária média
-    
+
     ### Dados Atualizados:
     Os dados são atualizados automaticamente a cada 8 horas pelo sistema de scraping.
     """
@@ -116,25 +116,25 @@ async def list_fiis():
 async def get_magic_numbers(invested_value: Optional[int] = None):
     """
     ## 🧮 Calcular Magic Numbers dos FIIs
-    
+
     Calcula os "números mágicos" para análise de investimento em FIIs, baseado em critérios específicos.
-    
+
     ### Parâmetros:
     - **invested_value** *(opcional)*: Valor em reais para simular investimento
-    
+
     ### Critérios do Magic Number:
     - P/VP menor que 1.0
     - Dividend Yield positivo
     - Liquidez diária adequada
     - Duração indeterminada
     - Avaliação positiva nos últimos 12 meses
-    
+
     ### Com invested_value:
     Quando fornecido, calcula também:
     - **quantity**: Quantidade de cotas que poderia comprar
     - **total_cost**: Custo total do investimento
     - **monthly_dividends**: Dividendos mensais estimados
-    
+
     ### Exemplo:
     ```
     GET /fiis/magic_numbers?invested_value=10000
@@ -148,60 +148,52 @@ async def get_magic_numbers(invested_value: Optional[int] = None):
 async def get_database_status():
     """
     ## 📊 Status Detalhado do Sistema
-    
+
     Retorna informações detalhadas sobre o estado do banco de dados e sistema de scraping.
-    
+
     ### Informações do Banco:
     - **type**: Tipo do banco (DynamoDB)
     - **status**: Status da conexão
     - **total_fiis**: Total de FIIs armazenados
     - **fiis_with_dividend**: FIIs com dividend yield > 0
     - **fiis_without_dividend**: FIIs sem dividend yield
-    
+
     ### Informações do Scheduler:
     - **status**: Status do sistema automático
     - **next_update**: Frequência de atualizações
     - **auto_discovery**: Status da descoberta automática
-    
+
     ### Uso:
     Ideal para monitoramento da saúde do sistema e verificação de dados disponíveis.
     """
     try:
         repository = FiiRepositoryFactory.create()
         fiis = await repository.list()
-        
+
         total_fiis = len(fiis)
         fiis_with_dividend = len([f for f in fiis if f.dy_12 and f.dy_12 > 0])
-        
+
         return {
             "database": {
                 "type": "dynamodb",
                 "status": "connected",
                 "total_fiis": total_fiis,
                 "fiis_with_dividend": fiis_with_dividend,
-                "fiis_without_dividend": total_fiis - fiis_with_dividend
+                "fiis_without_dividend": total_fiis - fiis_with_dividend,
             },
-            "scheduler": {
-                "status": "active",
-                "next_update": "every 8 hours",
-                "auto_discovery": "enabled"
-            }
+            "scheduler": {"status": "active", "next_update": "every 8 hours", "auto_discovery": "enabled"},
         }
-    except Exception as e:
+    except Exception:
         return {
             "database": {
                 "type": "dynamodb",
                 "status": "connected",
                 "total_fiis": 0,
                 "fiis_with_dividend": 0,
-                "fiis_without_dividend": 0
+                "fiis_without_dividend": 0,
             },
-            "scheduler": {
-                "status": "active",
-                "next_update": "seeding in progress",
-                "auto_discovery": "enabled"
-            },
-            "message": "Database is being seeded in background"
+            "scheduler": {"status": "active", "next_update": "seeding in progress", "auto_discovery": "enabled"},
+            "message": "Database is being seeded in background",
         }
 
 
@@ -209,21 +201,21 @@ async def get_database_status():
 async def health_check():
     """
     ## 🏥 Health Check Completo
-    
+
     Verifica a saúde geral da API, incluindo conectividade com banco de dados e status do scheduler.
-    
+
     ### Verificações Realizadas:
     - ✅ **API Status**: Se a aplicação está rodando
     - ✅ **Database**: Conectividade e contagem de dados
     - ✅ **Scheduler**: Status do sistema automático
-    
+
     ### Códigos de Resposta:
     - **200**: Sistema saudável e funcionando
     - **503**: Problemas detectados no sistema
-    
+
     ### Uso:
     Ideal para health checks automáticos, monitoramento e CI/CD pipelines.
-    
+
     ### Exemplo de Resposta Saudável:
     ```json
     {
@@ -231,7 +223,7 @@ async def health_check():
         "message": "FII Scraper API is running",
         "database": {
             "type": "dynamodb",
-            "status": "connected", 
+            "status": "connected",
             "total_fiis": 150
         },
         "scheduler": "active"
@@ -241,27 +233,19 @@ async def health_check():
     try:
         repository = FiiRepositoryFactory.create()
         fiis = await repository.list()
-        
+
         return {
             "status": "healthy",
             "message": "FII Scraper API is running",
-            "database": {
-                "type": "dynamodb",
-                "status": "connected",
-                "total_fiis": len(fiis)
-            },
-            "scheduler": "active"
+            "database": {"type": "dynamodb", "status": "connected", "total_fiis": len(fiis)},
+            "scheduler": "active",
         }
     except Exception:
         return {
             "status": "healthy",
             "message": "FII Scraper API is running - seeding in progress",
-            "database": {
-                "type": "dynamodb",
-                "status": "connected",
-                "total_fiis": 0
-            },
-            "scheduler": "active"
+            "database": {"type": "dynamodb", "status": "connected", "total_fiis": 0},
+            "scheduler": "active",
         }
 
 
@@ -269,70 +253,67 @@ async def health_check():
 async def dashboard(request: Request):
     """
     ## 📊 Dashboard Visual dos FIIs
-    
+
     Interface web moderna com Material Design para visualização e análise dos dados dos FIIs.
-    
+
     ### Funcionalidades:
     - 📈 **Estatísticas Gerais**: Total de FIIs, Magic Numbers, liquidez média
     - ⭐ **Magic Numbers**: Lista destacada dos FIIs recomendados
     - 📋 **Tabela Completa**: Todos os FIIs com dados detalhados
     - 🎨 **Material Design**: Interface moderna e responsiva
     - 🔄 **Auto-refresh**: Atualização automática a cada 5 minutos
-    
+
     ### Indicadores Visuais:
     - **Verde**: Valores positivos (P/VP < 1, DY > 0)
     - **Vermelho**: Valores negativos ou altos
     - **Badges**: Classificação de liquidez (Alta/Média/Baixa)
     - **Magic Number**: Destaque especial para FIIs recomendados
-    
+
     ### Responsivo:
     Otimizado para desktop, tablet e mobile.
     """
     try:
         fiis_usecase = FiiListUseCase()
         fiis = await fiis_usecase.execute()
-        
+
         magic_usecase = FiiMagicNumberUseCase()
         magic_numbers = await magic_usecase.execute()
     except Exception:
         fiis = []
         magic_numbers = []
-    
+
     total_fiis = len(fiis)
     positive_dy = len([f for f in fiis if f.dy_12 and f.dy_12 > 0])
     magic_count = len(magic_numbers)
-    
+
     total_liquidity = sum(f.dialy_liquidity or 0 for f in fiis)
     avg_liquidity = (total_liquidity / total_fiis / 1000000) if total_fiis > 0 else 0
-    
+
     stats = {
         "total_fiis": total_fiis,
         "positive_dy": positive_dy,
         "magic_numbers": magic_count,
-        "avg_liquidity": avg_liquidity
+        "avg_liquidity": avg_liquidity,
     }
-    
-    return templates.TemplateResponse("dashboard.html", {
-        "request": request,
-        "fiis": fiis,
-        "magic_numbers": magic_numbers,
-        "stats": stats
-    })
+
+    return templates.TemplateResponse(
+        "dashboard.html", {"request": request, "fiis": fiis, "magic_numbers": magic_numbers, "stats": stats}
+    )
 
 
 @app.get("/status", tags=["Status"])
 async def status():
     """
     ## 📈 Status do Sistema
-    
+
     Endpoint de status detalhado para monitoramento da aplicação.
-    
+
     ### Informações Retornadas:
     - **Status Geral**: Saúde da aplicação
     - **Database**: Status da conexão com DynamoDB
     - **Estatísticas**: Números totais de registros
     - **Última Atualização**: Timestamp da última operação
-    
+
     ### Status Codes:
     - **healthy**: Sistema funcionando normalmente
     - **degraded**: Sistema com problemas parciais
@@ -342,21 +323,13 @@ async def status():
         # Test database connection
         fiis_usecase = FiiListUseCase()
         fiis = await fiis_usecase.execute()
-        
+
         return {
             "status": "healthy",
             "timestamp": "2024-01-15T10:30:00Z",
             "version": "2.0.0",
-            "database": {
-                "type": "dynamodb",
-                "status": "healthy",
-                "total_fiis": len(fiis)
-            },
-            "services": {
-                "scraper": "healthy",
-                "scheduler": "healthy",
-                "api": "healthy"
-            }
+            "database": {"type": "dynamodb", "status": "healthy", "total_fiis": len(fiis)},
+            "services": {"scraper": "healthy", "scheduler": "healthy", "api": "healthy"},
         }
     except Exception as e:
         return {
@@ -364,9 +337,5 @@ async def status():
             "timestamp": "2024-01-15T10:30:00Z",
             "version": "2.0.0",
             "error": str(e),
-            "database": {
-                "type": "dynamodb", 
-                "status": "error",
-                "error": str(e)
-            }
+            "database": {"type": "dynamodb", "status": "error", "error": str(e)},
         }

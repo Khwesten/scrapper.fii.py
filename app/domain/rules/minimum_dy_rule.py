@@ -12,5 +12,5 @@ class MinimumDyRule(FiiRule):
     def validate(cls, fii: FiiDomain) -> bool:
         if fii.dy_12 is None:
             return False
-        
+
         return fii.dy_12 >= cls.MINIMUM_DY
