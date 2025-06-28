@@ -11,19 +11,62 @@ Uma API moderna para scraping e análise de Fundos de Investimento Imobiliário 
 - 📊 **Health Check Inteligente**: Monitoramento de API + banco + scheduler
 - 🛠️ **Makefile Centralizado**: Comandos simplificados para desenvolvimento
 - 📚 **ReDoc**: Interface moderna de documentação da API
+- ⚙️ **Configuração Centralizada**: Suporte a múltiplos ambientes (local, test, dev, prod)
 
 ## 🚀 **Início Rápido**
 
 ### Pré-requisitos
 - Docker & Docker Compose
 - Make
+- Python 3.10+ e Poetry (para desenvolvimento local)
 
-### Comandos Essenciais
+### Comandos por Ambiente
 
+#### 🏠 **Desenvolvimento Local**
 ```bash
-# Iniciar ambiente completo
+# Iniciar ambiente completo (API na porta 8001)
 make dev-up
 
+# Ver logs em tempo real
+make dev-logs
+
+# Parar ambiente
+make dev-down
+```
+
+#### 🧪 **Testes**
+```bash
+# Executar todos os testes (126 testes)
+make test-all
+
+# Testes unitários (68 testes)
+make test-unit
+
+# Testes de integração (27 testes)
+make test-integration
+
+# Testes E2E (31 testes)
+make test-e2e
+
+# Formatar código
+make format
+```
+
+#### 🐳 **Produção**
+```bash
+# Iniciar produção (API na porta 8000)
+make prod-up
+
+# Ver logs de produção
+make prod-logs
+
+# Parar produção
+make prod-down
+```
+
+### Comandos de Monitoramento
+
+```bash
 # Verificar saúde do sistema
 make health
 
@@ -32,15 +75,71 @@ make status
 
 # Abrir documentação da API
 make docs
+```
 
-# Executar testes E2E
-make test-e2e
+## ⚙️ **Configuração de Ambientes**
 
-# Ver logs em tempo real
-make dev-logs
+A aplicação suporta múltiplos ambientes com configuração centralizada:
 
-# Parar ambiente
-make dev-down
+### Ambientes Disponíveis
+
+| Ambiente | API Port | DynamoDB | Config File | Uso |
+|----------|----------|----------|-------------|-----|
+| **Local** | 8001 | localhost:8002 | `config.yml` | Desenvolvimento |
+| **Test** | 8000 | localhost:8002 | `config-test.yml` | Testes unitários/integração |
+| **E2E** | 8080 | dynamodb-local:8000 | `config-e2e.yml` | Testes E2E no Docker |
+| **Prod** | 8000 | AWS DynamoDB | Env vars | Produção |
+
+### Configuração via Arquivo YAML
+
+```yaml
+api:
+  host: "localhost"
+  port: 8001
+  debug: true
+
+database:
+  type: "dynamodb"
+  dynamodb:
+    table_name: "fiis"
+    region: "us-east-1"
+    endpoint: "http://localhost:8002"  # null para AWS
+    access_key: "dummy"                # null para AWS IAM
+    secret_key: "dummy"                # null para AWS IAM
+
+external:
+  status_invest:
+    base_url: "https://statusinvest.com.br/fundos-imobiliarios/"
+    timeout: 30
+
+scheduler:
+  scrape_interval_hours: 8
+```
+
+### Configuração via Variáveis de Ambiente
+
+```bash
+# Ambiente
+export ENVIRONMENT=local|test|e2e|prod
+
+# API
+export API_HOST=localhost
+export API_PORT=8001
+export API_DEBUG=true
+
+# DynamoDB
+export DYNAMODB_TABLE_NAME=fiis
+export DYNAMODB_ENDPOINT=http://localhost:8002
+export AWS_REGION=us-east-1
+export AWS_ACCESS_KEY_ID=dummy
+export AWS_SECRET_ACCESS_KEY=dummy
+
+# Status Invest
+export STATUS_INVEST_BASE_URL="https://statusinvest.com.br/fundos-imobiliarios/"
+export STATUS_INVEST_TIMEOUT=30
+
+# Scheduler
+export SCRAPE_INTERVAL_HOURS=8
 ```
 
 ## 📡 **Endpoints da API**
@@ -53,10 +152,19 @@ make dev-down
 | `/fiis/magic_numbers` | GET | Cálculo de magic numbers |
 | `/docs` | GET | Documentação interativa (ReDoc) |
 
+### URLs por Ambiente
+
+| Ambiente | Base URL | Documentação |
+|----------|----------|--------------|
+| **Local** | http://localhost:8001 | http://localhost:8001/docs |
+| **Test** | http://localhost:8000 | http://localhost:8000/docs |
+| **E2E** | http://localhost:8080 | http://localhost:8080/docs |
+| **Prod** | http://localhost:8000 | http://localhost:8000/docs |
+
 ### Exemplos de Uso
 
 ```bash
-# Health check completo
+# Health check completo (ambiente local)
 curl http://localhost:8001/health
 
 # Status do banco
@@ -68,15 +176,6 @@ curl http://localhost:8001/fiis
 # Magic numbers com investimento de R$ 10.000
 curl "http://localhost:8001/fiis/magic_numbers?invested_value=10000"
 ```
-
-## 📚 **Documentação da API**
-
-A API utiliza **ReDoc** para uma documentação interativa e moderna:
-
-- **URL**: http://localhost:8001/docs
-- **Interface**: ReDoc (mais limpa que Swagger)
-- **Recursos**: Descrições detalhadas, exemplos, códigos de resposta
-- **Organização**: Endpoints agrupados por tags (FIIs, Sistema, Análise, Monitoramento)
 
 ## 🔄 **Sistema de Scraping Automático**
 
@@ -94,7 +193,42 @@ A API utiliza **ReDoc** para uma documentação interativa e moderna:
 ✅ Scheduled update completed: 152 FIIs updated from gateway
 ```
 
+## 🛠️ **Desenvolvimento**
+
+### Estrutura do Projeto
+```
+├── app/                    # Código principal da aplicação
+├── tests/                  # Testes (unit, integration, e2e)
+├── config*.yml             # Arquivos de configuração por ambiente
+├── app_config.py           # Classe central de configuração
+├── docker-compose.yml      # Orquestração Docker
+├── Makefile               # Comandos automatizados
+└── README.md              # Este arquivo
+```
+
+### Comandos de Desenvolvimento
+```bash
+# Executar localmente (sem Docker)
+poetry install
+export ENVIRONMENT=local
+poetry run python main.py
+
+# Executar testes específicos
+poetry run pytest tests/unit/ -v
+poetry run pytest tests/integration/ -v  
+poetry run pytest tests/e2e/ -v
+
+# Verificar qualidade do código
+make format
+```
+
 ## 🚀 **Melhorias Implementadas v2.0**
+
+### ✅ Configuração Centralizada
+- ⚙️ **Sistema unificado**: AppConfig com suporte a YAML e env vars
+- 🌍 **Multi-ambiente**: Configurações específicas para local/test/e2e/prod
+- 🔒 **Type-safe**: Propriedades tipadas e validadas
+- 📝 **Zero hardcode**: Todas as portas/URLs/credenciais configuráveis
 
 ### ✅ Removidas Dependências Obsoletas
 - ❌ Rotas `/fiis/scrape` e `/database/seed` (redundantes)
@@ -106,26 +240,16 @@ A API utiliza **ReDoc** para uma documentação interativa e moderna:
 - 🔄 Sem listas fixas - usa gateway para listar FIIs
 - ⚡ Fallback para FIIs populares em caso de falha
 
-### ✅ Interface de Documentação Melhorada
-- 📚 **ReDoc**: Interface moderna e limpa para documentação da API
-- 📖 **Documentação Rica**: Descrições detalhadas de todos os endpoints
-- 🏷️ **Tags Organizadas**: Endpoints agrupados por funcionalidade
-- 💡 **Exemplos Claros**: Exemplos de uso e códigos de resposta
-
-### ✅ Testes E2E Automatizados
-- 🧪 Substituiu testes manuais com curl
+### ✅ Testes Completos
+- 🧪 **126 testes total**: 68 unit + 27 integration + 31 e2e
 - ⚡ Execução rápida e confiável
 - 📊 Validação completa do sistema
-
-### ✅ Makefile Centralizado
-- 🛠️ Todos os comandos Docker centralizados
-- ⏱️ Sleeps automáticos otimizados
-- 🔄 Comandos simplificados
+- � Configuração automatizada de ambientes de teste
 
 ## 📈 **Próximas Melhorias**
 
 - [ ] Métricas avançadas (Prometheus)
-- [ ] Alertas automáticos (Slack/Discord)
+- [ ] Alertas automáticos (Slack/Discord)  
 - [ ] Cache Redis para performance
 - [ ] Rate limiting para API
 - [ ] Deploy automatizado (CI/CD)
@@ -144,4 +268,4 @@ Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalh
 
 ---
 
-**FII Scraper API v2.0** - Scraping automático e inteligente de FIIs brasileiros 🚀
+**FII Scraper API v2.0** - Scraping automático e inteligente de FIIs brasileiros com configuração centralizada 🚀

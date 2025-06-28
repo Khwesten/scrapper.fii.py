@@ -2,6 +2,7 @@ import asyncio
 from contextlib import asynccontextmanager
 from typing import List, Optional
 
+import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -13,7 +14,9 @@ from app.usecases.fii_magic_number_usecase import (
     FiiMagicNumberUseCase,
     MagicNumberResponse,
 )
+from app_config import AppConfig
 
+config = AppConfig()
 templates = Jinja2Templates(directory="templates")
 
 
@@ -339,3 +342,12 @@ async def status():
             "error": str(e),
             "database": {"type": "dynamodb", "status": "error", "error": str(e)},
         }
+
+
+if __name__ == "__main__":
+    uvicorn.run(
+        "main:app",
+        host=config.api_host,
+        port=config.api_port,
+        reload=config.api_debug,
+    )

@@ -5,7 +5,9 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 
 from app.usecases.fii_scrape_usecase import FiiScrapeUseCase
+from app_config import AppConfig
 
+config = AppConfig()
 logger = logging.getLogger(__name__)
 
 
@@ -99,14 +101,14 @@ class FiiScheduler:
     def start(self):
         self.scheduler.add_job(
             self.scheduled_update,
-            trigger=IntervalTrigger(hours=8),
+            trigger=IntervalTrigger(hours=config.scrape_interval_hours),
             id="fii_update",
             max_instances=1,
             replace_existing=True,
         )
 
         self.scheduler.start()
-        logger.info("📅 FII Scheduler started - Updates every 8h")
+        logger.info(f"📅 FII Scheduler started - Updates every {config.scrape_interval_hours}h")
 
     def stop(self):
         self.scheduler.shutdown()

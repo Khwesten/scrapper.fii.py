@@ -9,7 +9,10 @@ Ferramental do projeto:
 - pyenv para gerenciamento de versão de python e ambientes virtuais
 
 Regras gerais:
-- imports devem ficar no topo do arquivo e não nos métodos ou funções
+- Imports devem ficar no topo do arquivo e não nos métodos ou funções
+- Só instale bibliotecas quando o código necessário para gerar aquele comportamente/funcionalidade for de tamanho médio ou grande. (exemplo, não importar lib para tratar semantic-version, pois é relativamente simples lidar com isso)
+- Compreensão de diferença entre variáveis locais/contexto e variáveis de ambiente
+- Se for criar algum arquivo .md com explicações, unificar com o README.md deixando apenas informações necessárias para rodar a aplicação em seus múltiplos ambientes(loca, test, dev e prod)
 
 Regras da arquitetura:
 - Domain não importa nada
@@ -17,8 +20,26 @@ Regras da arquitetura:
 - Gateway importa Domain e DTO
 - Repository importa Domain e Model
 
-Regras específicas:
-[...]
+Regras de testes:
+- Testes com Pytest na pasta test
+- Testes escritos com estrutura de AAA(arrange, act, assert)
+- Testes com mock, usam MagicMocks(spec=[class])
+- Estrutura de pastas dos arquivos de testes, devem ser análogos as da classes testadas(se a classe testada é um gateway, o teste deveria estar na mesma estrutura de organização dentro da pasta gateway)
+- Os arquivos de testes devem ser estruturados como classes não como métodos/funções soltas
+- Quando todas as alterações tiverem sido aplicadas, rode o comando make relativo aos testes alterados
+- Testes integrados devem testar integrado apenas o banco(dynamo), todo o resto deve ser mockado usando requests-mock ou MagicMock(spec=[class])
+- Tests e2e rodam integrados com o banco(dynamo) e a aplicação(fastapi)
+
+Regras de ci/cd:
+- Utilizamos github actions
+- O pipeline deve seguir a seguinte ordem:Testes escritos com estrutura de AAA(arrange, act, assert)
+- job make format(apenas no modo checagem e quee bloqueia os outros jobs, se não passar)
+  - job unit tests
+  - job integration tests
+  - job e2e tests
+  - job deploy(ainda não implementado e dependente do resultado dos jobs de tests)
+- Utilizamos docker para rodar os testes
+- Os jobs são separados em steps que executam pequenos contextos(ex.: setup machine, checkout repo, setup python, cache pip, set env vars...)
 
 Regras de alterações:
 - Manter a complexidade cognitiva das alterações em um nível aceitável

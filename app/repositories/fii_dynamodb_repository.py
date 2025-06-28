@@ -15,19 +15,19 @@ class FiiDynamoDBRepository(FiiRepository):
         self.table_name = table_name or DatabaseConfig.get_dynamodb_table_name()
         self.region_name = DatabaseConfig.get_aws_region()
         self.endpoint_url = DatabaseConfig.get_dynamodb_endpoint()
+        credentials = DatabaseConfig.get_aws_credentials()
+
+        # Filter out None values to avoid conflicts
+        self.aws_config = {k: v for k, v in credentials.items() if v is not None}
         self._session = Session()
 
     async def _get_table(self):
-        async with self._session.resource(
-            "dynamodb", region_name=self.region_name, endpoint_url=self.endpoint_url
-        ) as dynamodb:
+        async with self._session.resource("dynamodb", endpoint_url=self.endpoint_url, **self.aws_config) as dynamodb:
             return await dynamodb.Table(self.table_name)
 
     async def _ensure_table_exists(self):
         try:
-            async with self._session.client(
-                "dynamodb", region_name=self.region_name, endpoint_url=self.endpoint_url
-            ) as client:
+            async with self._session.client("dynamodb", endpoint_url=self.endpoint_url, **self.aws_config) as client:
                 try:
                     await client.describe_table(TableName=self.table_name)
                     logger.info(f"Table {self.table_name} already exists")

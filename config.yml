@@ -1,0 +1,21 @@
+api:
+  host: "localhost"
+  port: 8001
+  debug: true
+
+database:
+  type: "dynamodb"
+  dynamodb:
+    table_name: "fiis"
+    region: "us-east-1"
+    endpoint: "http://localhost:8002"
+    access_key: "dummy"
+    secret_key: "dummy"
+
+external:
+  status_invest:
+    base_url: "https://statusinvest.com.br/fundos-imobiliarios/"
+    timeout: 30
+
+scheduler:
+  scrape_interval_hours: 8

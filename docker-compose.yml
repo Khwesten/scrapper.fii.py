@@ -9,6 +9,8 @@ services:
     environment:
       - PYTHONPATH=/app
       - ENVIRONMENT=development
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
       - FII_REPOSITORY_TYPE=dynamodb
       - AWS_REGION=us-east-1
       - AWS_ACCESS_KEY_ID=dummy
@@ -40,6 +42,8 @@ services:
     environment:
       - PYTHONPATH=/app
       - ENVIRONMENT=production
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
       - AWS_REGION=us-east-1
       - AWS_ACCESS_KEY_ID=dummy
       - AWS_SECRET_ACCESS_KEY=dummy
@@ -85,7 +89,9 @@ services:
       - "8080:8000"
     environment:
       - PYTHONPATH=/app
-      - ENVIRONMENT=test
+      - ENVIRONMENT=e2e
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
       - FII_REPOSITORY_TYPE=dynamodb
       - AWS_REGION=us-east-1
       - AWS_ACCESS_KEY_ID=dummy
