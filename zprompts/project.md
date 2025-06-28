@@ -8,13 +8,8 @@ Ferramental do projeto:
 - poetry para gerenciamento de bibliotecas
 - pyenv para gerenciamento de versão de python e ambientes virtuais
 
-Regras de testes:
-- Testes com Pytest na pasta test
-- Testes escritos com estrutura de AAA(arrange, act, assert)
-- Testes com mock, usam MagicMocks(spec=[class])
-- Os arquivos de testes respectivo ao que testa, deve seguir a mesma estrutura de pastas(se a classe testada é um gateway, no teste, deveria estar na mesma estrutura de organização estando dentro da pasta gateway)
-- Os arquivos de testes devem ser estruturados como classes não como funções soltas
-- Quando todas as alterações tiverem sido aplicadas, rode o comando make relativo aos testes alterados
+Regras gerais:
+- imports devem ficar no topo do arquivo e não nos métodos ou funções
 
 Regras da arquitetura:
 - Domain não importa nada
@@ -22,10 +17,14 @@ Regras da arquitetura:
 - Gateway importa Domain e DTO
 - Repository importa Domain e Model
 
+Regras específicas:
+[...]
+
 Regras de alterações:
 - Manter a complexidade cognitiva das alterações em um nível aceitável
 - Rode o comando make format ao fim das alterações
 - Rode o comando make test-all para checar se as alterações não quebraram a aplicação
+  - Se os testes falharem, corrija-os
 
 Quero que você:
 - Evite explicações básicas (como “o que é um usecase”)
