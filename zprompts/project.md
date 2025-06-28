@@ -58,8 +58,3 @@ Quero que você:
 
 Contexto:
 A aplicação recebeu o seguinte erro no jog de format check
-```
-The Poetry configuration is invalid:
-  - Additional properties are not allowed ('package-mode' was unexpected)
-Error: Process completed with exit code 1.
-```

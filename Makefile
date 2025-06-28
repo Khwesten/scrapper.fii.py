@@ -39,6 +39,10 @@ test-unit: ## Run unit tests only
 	@echo "$(BLUE)🧪 Running unit tests...$(NC)"
 	poetry run pytest tests/unit/ -v
 
+test-unit-cov: ## Run unit tests with coverage
+	@echo "$(BLUE)🧪 Running unit tests with coverage...$(NC)"
+	poetry run pytest tests/unit/ -v --cov=app --cov-report=term-missing
+
 test-integration: ## Run integration tests with DynamoDB
 	@echo "$(BLUE)🧪 Running integration tests...$(NC)"
 	@echo "$(YELLOW)📦 Starting DynamoDB for integration tests...$(NC)"
@@ -64,6 +68,10 @@ test-e2e: ## Run E2E tests with full application
 	docker-compose --profile e2e down
 
 test-all: test-unit test-integration test-e2e ## Run all tests (unit, integration, e2e)
+
+test-cov: ## Run all tests with coverage report
+	@echo "$(BLUE)🧪 Running all tests with coverage...$(NC)"
+	poetry run pytest tests/unit/ tests/integration/ -v --cov=app --cov-report=term-missing --cov-report=html
 
 run-local: ## Run API locally with Poetry
 	@echo "$(BLUE)🚀 Starting API locally...$(NC)"

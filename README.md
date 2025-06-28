@@ -39,14 +39,17 @@ make dev-down
 # Executar todos os testes (126 testes)
 make test-all
 
-# Testes unitários (68 testes)
-make test-unit
+# Testes unitários com cobertura
+make test-unit-cov
 
-# Testes de integração (27 testes)
+# Testes de integração
 make test-integration
 
-# Testes E2E (31 testes)
+# Testes E2E
 make test-e2e
+
+# Todos os testes com relatório de cobertura
+make test-cov
 
 # Formatar código
 make format
@@ -79,7 +82,7 @@ make docs
 
 ## ⚙️ **Configuração de Ambientes**
 
-A aplicação suporta múltiplos ambientes com configuração centralizada:
+A aplicação suporta múltiplos ambientes com configuração centralizada via arquivos YAML ou variáveis de ambiente.
 
 ### Ambientes Disponíveis
 
@@ -90,7 +93,7 @@ A aplicação suporta múltiplos ambientes com configuração centralizada:
 | **E2E** | 8080 | dynamodb-local:8000 | `config-e2e.yml` | Testes E2E no Docker |
 | **Prod** | 8000 | AWS DynamoDB | Env vars | Produção |
 
-### Configuração via Arquivo YAML
+### Estrutura de Configuração
 
 ```yaml
 api:
@@ -116,30 +119,19 @@ scheduler:
   scrape_interval_hours: 8
 ```
 
-### Configuração via Variáveis de Ambiente
+### Variáveis de Ambiente (Produção)
 
 ```bash
-# Ambiente
-export ENVIRONMENT=local|test|e2e|prod
-
-# API
-export API_HOST=localhost
-export API_PORT=8001
-export API_DEBUG=true
-
-# DynamoDB
+# Obrigatórias para produção
+export ENVIRONMENT=prod
+export API_HOST=0.0.0.0
+export API_PORT=8000
 export DYNAMODB_TABLE_NAME=fiis
-export DYNAMODB_ENDPOINT=http://localhost:8002
 export AWS_REGION=us-east-1
-export AWS_ACCESS_KEY_ID=dummy
-export AWS_SECRET_ACCESS_KEY=dummy
 
-# Status Invest
-export STATUS_INVEST_BASE_URL="https://statusinvest.com.br/fundos-imobiliarios/"
-export STATUS_INVEST_TIMEOUT=30
-
-# Scheduler
-export SCRAPE_INTERVAL_HOURS=8
+# Opcionais (usar IAM roles em produção)
+export AWS_ACCESS_KEY_ID=your_access_key
+export AWS_SECRET_ACCESS_KEY=your_secret_key
 ```
 
 ## 📡 **Endpoints da API**
@@ -230,11 +222,6 @@ make format
 - 🔒 **Type-safe**: Propriedades tipadas e validadas
 - 📝 **Zero hardcode**: Todas as portas/URLs/credenciais configuráveis
 
-### ✅ Removidas Dependências Obsoletas
-- ❌ Rotas `/fiis/scrape` e `/database/seed` (redundantes)
-- ❌ Arquivo `scrape.py` (obsoleto)
-- ❌ Todas as referências a CSV
-
 ### ✅ Scraping Inteligente
 - 🌐 Descoberta automática de todos os FIIs disponíveis
 - 🔄 Sem listas fixas - usa gateway para listar FIIs
@@ -242,17 +229,18 @@ make format
 
 ### ✅ Testes Completos
 - 🧪 **126 testes total**: 68 unit + 27 integration + 31 e2e
+- 📊 **Cobertura de código**: 76% com pytest-cov
 - ⚡ Execução rápida e confiável
-- 📊 Validação completa do sistema
-- � Configuração automatizada de ambientes de teste
+- � Relatórios de cobertura em HTML
+- 🔧 Configuração automatizada de ambientes de teste
 
 ## 📈 **Próximas Melhorias**
 
-- [ ] Métricas avançadas (Prometheus)
-- [ ] Alertas automáticos (Slack/Discord)  
+- [ ] Métricas avançadas (DD/grafana/kibana)
+- [ ] Alertas automáticos (Slack/Discord/zap)  
 - [ ] Cache Redis para performance
 - [ ] Rate limiting para API
-- [ ] Deploy automatizado (CI/CD)
+- [ ] Deploy automatizado (CD)
 
 ## 🤝 **Contribuindo**
 
