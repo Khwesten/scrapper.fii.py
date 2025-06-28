@@ -184,7 +184,7 @@ jobs:
 
       - name: Build and start E2E environment
         run: |
-          ENVIRONMENT=test docker-compose --profile e2e up -d --build
+          ENVIRONMENT=test docker compose --profile e2e up -d --build
 
       - name: Wait for application
         run: |
@@ -197,8 +197,8 @@ jobs:
 
       - name: Cleanup E2E environment
         if: always()
-        run: docker-compose --profile e2e down --remove-orphans
+        run: docker compose --profile e2e down --remove-orphans
 
       - name: Show logs on failure
         if: failure()
-        run: docker-compose --profile e2e logs
+        run: docker compose --profile e2e logs
