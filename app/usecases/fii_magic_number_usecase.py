@@ -1,10 +1,11 @@
 from decimal import Decimal
-from typing import List, Optional, Dict
+from typing import List, Optional
+
+from pydantic import BaseModel
 
 from app.domain.fii_domain import FiiDomain
-from app.repositories.fii_csv_repository import FiiCSVRepository
 from app.repositories.fii_repository import FiiRepository
-from pydantic import BaseModel
+from app.repositories.fii_repository_factory import FiiRepositoryFactory
 
 
 class MagicNumberResponse(BaseModel):
@@ -13,6 +14,7 @@ class MagicNumberResponse(BaseModel):
     quotas_for_invested_value: int
     dividend_for_invested_value: Decimal
     invested_value: int
+    fii: FiiDomain
 
 
 class FiiMagicNumberUseCase:
@@ -22,7 +24,7 @@ class FiiMagicNumberUseCase:
         fii_repository: FiiRepository = None,
     ) -> None:
         self.invested_value = invested_value or 10000
-        self.fii_repository = fii_repository or FiiCSVRepository()
+        self.fii_repository = fii_repository or FiiRepositoryFactory.create()
 
     async def execute(self) -> List[MagicNumberResponse]:
         fiis = await self.fii_repository.list()
@@ -38,10 +40,13 @@ class FiiMagicNumberUseCase:
         magic_number = int(fii.last_price / fii.last_dividend)
         dividend_for_invested_value = Decimal(quotas_for_invested_value * fii.last_dividend)
 
-        return MagicNumberResponse(**{
-            "ticker": fii.ticker,
-            "magic_number": magic_number,
-            "quotas_for_invested_value": quotas_for_invested_value,
-            "dividend_for_invested_value": dividend_for_invested_value,
-            "invested_value": self.invested_value,
-        })
+        return MagicNumberResponse(
+            **{
+                "ticker": fii.ticker,
+                "magic_number": magic_number,
+                "quotas_for_invested_value": quotas_for_invested_value,
+                "dividend_for_invested_value": dividend_for_invested_value,
+                "invested_value": self.invested_value,
+                "fii": fii,
+            }
+        )

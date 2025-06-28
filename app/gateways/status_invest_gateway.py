@@ -8,6 +8,9 @@ from lxml import etree
 from app.domain.fii_domain import FiiDomain
 from app.libs.data_crawler_converter import DataCrawlerConverter
 from app.libs.logger import logger
+from app_config import AppConfig
+
+config = AppConfig()
 
 
 class FiiGateway:
@@ -19,7 +22,7 @@ class FiiGateway:
 
 
 class StatusInvestGateway(FiiGateway):
-    STATUS_INVEST_URL = "https://statusinvest.com.br/fundos-imobiliarios/"
+    STATUS_INVEST_URL = config.status_invest_base_url
 
     XPATH_P_VP = "/html/body/main/div[2]/div[5]/div/div[2]/div/div[1]/strong/text()"
     XPATH_SEGMENT = "/html/body/main/div[3]/div/div/div[2]/div/div[6]/div/div/strong/text()"
@@ -33,7 +36,7 @@ class StatusInvestGateway(FiiGateway):
     XPATH_DIALY_LIQUIDITY = "/html/body/main/div[2]/div[6]/div/div/div[3]/div/div/div/strong/text()"
     XPATH_QUOTA_HOLDER = "/html/body/main/div[2]/div[5]/div/div[6]/div/div[1]/strong/text()"
     XPATH_QUOTA_QUANTITY = "/html/body/main/div[2]/div[5]/div/div[6]/div/div[2]/span[2]/text()"
-    XPATH_PATRIMONY = "/html/body/main/div[2]/div[5]/div/div[1]/div/div[2]/span[2]/text()"  # TODO
+    XPATH_PATRIMONY = "/html/body/main/div[2]/div[5]/div/div[1]/div/div[2]/span[2]/text()"
 
     def __init__(self, session: ClientSession = None):
         self.session = session or ClientSession()

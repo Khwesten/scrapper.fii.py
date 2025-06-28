@@ -1,0 +1,126 @@
+services:
+  # Development service with hot reload
+  fii-scraper-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8000"
+    environment:
+      - PYTHONPATH=/app
+      - ENVIRONMENT=development
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - FII_REPOSITORY_TYPE=dynamodb
+      - AWS_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=dummy
+      - AWS_SECRET_ACCESS_KEY=dummy
+      - AWS_DEFAULT_REGION=us-east-1
+      - DYNAMODB_ENDPOINT=http://dynamodb-local:8000
+      - DYNAMODB_TABLE_NAME=fiis
+    volumes:
+      - .:/app  # Mount entire project for hot reload
+      - ./csv:/app/csv
+    depends_on:
+      - dynamodb-local
+    profiles:
+      - dev
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Production service
+  fii-scraper:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONPATH=/app
+      - ENVIRONMENT=production
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - AWS_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=dummy
+      - AWS_SECRET_ACCESS_KEY=dummy
+      - AWS_DEFAULT_REGION=us-east-1
+      - DYNAMODB_ENDPOINT=http://dynamodb-local:8000
+      - DYNAMODB_TABLE_NAME=fiis
+    volumes:
+      - ./data:/app/data  # Mount data directory for backups
+    restart: unless-stopped
+    depends_on:
+      - dynamodb-local
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    profiles:
+      - production
+
+  # Local DynamoDB for development and testing
+  dynamodb-local:
+    image: amazon/dynamodb-local:latest
+    ports:
+      - "8002:8000"
+    command: ["-jar", "DynamoDBLocal.jar", "-sharedDb", "-inMemory"]
+    environment:
+      - AWS_ACCESS_KEY_ID=dummy
+      - AWS_SECRET_ACCESS_KEY=dummy
+      - AWS_DEFAULT_REGION=us-east-1
+    profiles:
+      - dev
+      - test
+      - integration
+      - e2e
+
+  # Test service for E2E tests
+  fii-scraper-test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8000"
+    environment:
+      - PYTHONPATH=/app
+      - ENVIRONMENT=e2e
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - FII_REPOSITORY_TYPE=dynamodb
+      - AWS_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=dummy
+      - AWS_SECRET_ACCESS_KEY=dummy
+      - AWS_DEFAULT_REGION=us-east-1
+      - DYNAMODB_ENDPOINT=http://dynamodb-local:8000
+      - DYNAMODB_TABLE_NAME=fiis_test
+    depends_on:
+      dynamodb-local:
+        condition: service_started
+    profiles:
+      - test
+      - e2e
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 6
+      start_period: 15s
+
+  # Optional: Nginx reverse proxy for production
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - fii-scraper
+    restart: unless-stopped
+    profiles:
+      - production

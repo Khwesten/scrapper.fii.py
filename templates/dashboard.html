@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FII Dashboard - Análise de Fundos Imobiliários</title>
+    
+    <!-- Material Design Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!-- Material Design Components -->
+    <link href="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --mdc-theme-primary: #1976d2;
+            --mdc-theme-secondary: #03dac6;
+            --mdc-theme-surface: #ffffff;
+            --mdc-theme-background: #f5f5f5;
+            --mdc-theme-on-surface: #000000;
+            --mdc-theme-on-primary: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--mdc-theme-background);
+            color: var(--mdc-theme-on-surface);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 16px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+            color: white;
+            padding: 24px 0;
+            margin-bottom: 32px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.12);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 300;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        }
+
+        .stat-card .icon {
+            color: var(--mdc-theme-primary);
+            font-size: 2.5rem;
+            margin-bottom: 12px;
+        }
+
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: 500;
+            color: var(--mdc-theme-primary);
+            margin-bottom: 4px;
+        }
+
+        .stat-card .label {
+            font-size: 0.875rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .section {
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 32px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .section-header {
+            background: var(--mdc-theme-primary);
+            color: white;
+            padding: 16px 24px;
+            font-size: 1.25rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            padding: 0;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+
+        .data-table th {
+            background: #f8f9fa;
+            padding: 16px 12px;
+            text-align: left;
+            font-weight: 500;
+            color: #333;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .data-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+            vertical-align: middle;
+        }
+
+        .data-table tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .ticker {
+            font-weight: 600;
+            color: var(--mdc-theme-primary);
+        }
+
+        .positive {
+            color: #4caf50;
+            font-weight: 500;
+        }
+
+        .negative {
+            color: #f44336;
+            font-weight: 500;
+        }
+
+        .neutral {
+            color: #666;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .badge.high {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+
+        .badge.medium {
+            background: #fff3e0;
+            color: #ef6c00;
+        }
+
+        .badge.low {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .magic-number {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 48px;
+            color: #666;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--mdc-theme-primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .refresh-btn {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--mdc-theme-primary);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 56px;
+            height: 56px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .refresh-btn:hover {
+            background: #1565c0;
+            transform: scale(1.1);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px 24px;
+            color: #666;
+        }
+
+        .empty-state .icon {
+            font-size: 4rem;
+            color: #ccc;
+            margin-bottom: 16px;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .data-table {
+                font-size: 0.75rem;
+            }
+            
+            .data-table th,
+            .data-table td {
+                padding: 8px 6px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <h1><i class="material-icons" style="vertical-align: middle; margin-right: 12px;">account_balance</i>FII Dashboard</h1>
+            <p>Análise completa de Fundos de Investimento Imobiliário em tempo real</p>
+        </div>
+    </div>
+
+    <div class="container">
+        {% if demo_mode %}
+        <div style="background: linear-gradient(45deg, #ff9800, #f57c00); color: white; padding: 12px 24px; border-radius: 8px; margin-bottom: 24px; text-align: center;">
+            <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">info</i>
+            <strong>Modo Demonstração</strong> - Dados simulados (BD não conectado)
+        </div>
+        {% endif %}
+
+        <!-- Statistics Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <i class="material-icons icon">assessment</i>
+                <div class="value" id="total-fiis">{{ stats.total_fiis }}</div>
+                <div class="label">Total de FIIs</div>
+            </div>
+            <div class="stat-card">
+                <i class="material-icons icon">trending_up</i>
+                <div class="value" id="positive-dy">{{ stats.positive_dy }}</div>
+                <div class="label">Com Dividend Yield > 0</div>
+            </div>
+            <div class="stat-card">
+                <i class="material-icons icon">auto_awesome</i>
+                <div class="value" id="magic-numbers">{{ stats.magic_numbers }}</div>
+                <div class="label">Magic Numbers</div>
+            </div>
+            <div class="stat-card">
+                <i class="material-icons icon">water_drop</i>
+                <div class="value" id="avg-liquidity">{{ "%.2f"|format(stats.avg_liquidity) }}M</div>
+                <div class="label">Liquidez Média (R$)</div>
+            </div>
+        </div>
+
+        <!-- Magic Numbers Section -->
+        {% if magic_numbers %}
+        <div class="section">
+            <div class="section-header">
+                <i class="material-icons">auto_awesome</i>
+                Magic Numbers - FIIs Recomendados
+            </div>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Ticker</th>
+                            <th>Preço</th>
+                            <th>P/VP</th>
+                            <th>DY 12M</th>
+                            <th>Liquidez</th>
+                            <th>Segmento</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fii in magic_numbers %}
+                        <tr>
+                            <td class="ticker">{{ fii.fii.ticker }}</td>
+                            <td>R$ {{ "%.2f"|format(fii.fii.last_price or 0) }}</td>
+                            <td class="{% if fii.fii.p_vp and fii.fii.p_vp < 1 %}positive{% else %}neutral{% endif %}">
+                                {{ "%.3f"|format(fii.fii.p_vp or 0) }}
+                            </td>
+                            <td class="positive">{{ "%.2f"|format(fii.fii.dy_12 or 0) }}%</td>
+                            <td>{{ "%.1f"|format((fii.fii.dialy_liquidity or 0) / 1000000) }}M</td>
+                            <td>{{ fii.fii.segment or 'N/A' }}</td>
+                            <td><span class="magic-number">⭐ Magic</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- All FIIs Section -->
+        <div class="section">
+            <div class="section-header">
+                <i class="material-icons">list</i>
+                Todos os FIIs Disponíveis
+            </div>
+            {% if fiis %}
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Ticker</th>
+                            <th>Preço</th>
+                            <th>P/VP</th>
+                            <th>DY 12M</th>
+                            <th>Liquidez</th>
+                            <th>Segmento</th>
+                            <th>Duração</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fii in fiis %}
+                        <tr>
+                            <td class="ticker">{{ fii.ticker }}</td>
+                            <td>R$ {{ "%.2f"|format(fii.last_price or 0) }}</td>
+                            <td class="{% if fii.p_vp %}{% if fii.p_vp < 1 %}positive{% elif fii.p_vp > 1.2 %}negative{% else %}neutral{% endif %}{% else %}neutral{% endif %}">
+                                {{ "%.3f"|format(fii.p_vp or 0) }}
+                            </td>
+                            <td class="{% if fii.dy_12 %}{% if fii.dy_12 > 0 %}positive{% else %}negative{% endif %}{% else %}neutral{% endif %}">
+                                {{ "%.2f"|format(fii.dy_12 or 0) }}%
+                            </td>
+                            <td>
+                                {% set liquidity = (fii.dialy_liquidity or 0) / 1000000 %}
+                                <span class="badge {% if liquidity > 5 %}high{% elif liquidity > 1 %}medium{% else %}low{% endif %}">
+                                    {{ "%.1f"|format(liquidity) }}M
+                                </span>
+                            </td>
+                            <td>{{ fii.segment or 'N/A' }}</td>
+                            <td>{{ fii.duration or 'N/A' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="material-icons icon">inbox</i>
+                <h3>Nenhum FII encontrado</h3>
+                <p>Execute o scraping para carregar os dados dos FIIs</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Refresh Button -->
+    <button class="refresh-btn" onclick="window.location.reload()">
+        <i class="material-icons">refresh</i>
+    </button>
+
+    <script src="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js"></script>
+    <script>
+        // Initialize Material Components
+        mdc.autoInit();
+
+        // Auto-refresh every 5 minutes
+        setTimeout(() => {
+            window.location.reload();
+        }, 300000);
+
+        // Add loading state to refresh button
+        document.querySelector('.refresh-btn').addEventListener('click', function() {
+            this.innerHTML = '<div class="spinner" style="width: 24px; height: 24px; border-width: 2px;"></div>';
+        });
+    </script>
+</body>
+</html>
