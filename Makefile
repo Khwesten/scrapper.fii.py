@@ -50,7 +50,7 @@ test-integration: ## Run integration tests with DynamoDB
 	@echo "$(YELLOW)⏳ Waiting for DynamoDB to initialize...$(NC)"
 	@sleep 5
 	@echo "$(GREEN)✅ DynamoDB should be ready!$(NC)"
-	ENVIRONMENT=test poetry run pytest tests/integration/ -v
+	ENVIRONMENT=integration poetry run pytest tests/integration/ -v
 	@echo "$(BLUE)🛑 Stopping DynamoDB...$(NC)"
 	docker-compose --profile integration down
 
@@ -59,11 +59,11 @@ test-e2e: ## Run E2E tests with full application
 	@echo "$(BLUE)🛑 Cleaning up any existing containers...$(NC)"
 	docker-compose --profile e2e down --remove-orphans
 	@echo "$(YELLOW)📦 Starting application and DynamoDB for E2E tests...$(NC)"
-	ENVIRONMENT=test docker-compose --profile e2e up -d --build
+	ENVIRONMENT=e2e docker-compose --profile e2e up -d --build
 	@echo "$(YELLOW)⏳ Waiting for application to be ready...$(NC)"
 	@timeout 45 bash -c 'until curl -sf http://localhost:8080/health > /dev/null 2>&1; do sleep 2; done' || (echo "$(RED)❌ Application failed to start$(NC)" && docker-compose --profile e2e logs && exit 1)
 	@echo "$(GREEN)✅ Application is ready!$(NC)"
-	ENVIRONMENT=test poetry run pytest tests/e2e/ -v
+	ENVIRONMENT=e2e poetry run pytest tests/e2e/ -v
 	@echo "$(BLUE)🛑 Stopping test environment...$(NC)"
 	docker-compose --profile e2e down
 

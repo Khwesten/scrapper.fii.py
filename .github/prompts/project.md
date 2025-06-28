@@ -29,10 +29,11 @@ Regras de testes:
 - Quando todas as alterações tiverem sido aplicadas, rode o comando make relativo aos testes alterados
 - Testes integrados devem testar integrado apenas o banco(dynamo), todo o resto deve ser mockado usando requests-mock ou MagicMock(spec=[class])
 - Tests e2e rodam integrados com o banco(dynamo) e a aplicação(fastapi)
+- Sempre manter o coverage acima do esperado
 
 Regras de ci/cd:
 - Utilizamos github actions
-- O pipeline deve seguir a seguinte ordem:Testes escritos com estrutura de AAA(arrange, act, assert)
+- O pipeline deve seguir a seguinte ordem
 - job make format(apenas no modo checagem e quee bloqueia os outros jobs, se não passar)
   - job unit tests
   - job integration tests
@@ -57,4 +58,4 @@ Quero que você:
 - Faça alterações pontuais, com foco no contexto dado
 
 Contexto:
-A aplicação recebeu o seguinte erro no jog de format check
+[...]

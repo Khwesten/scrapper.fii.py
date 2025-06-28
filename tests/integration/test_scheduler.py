@@ -1,5 +1,3 @@
-import os
-
 import pytest
 
 from app.scheduler import FiiBootstrap, FiiScheduler
@@ -8,25 +6,13 @@ from tests.factories.fii_domain_factory import FiiDomainFactory
 
 class TestFiiBootstrapIntegration:
 
-    @pytest.fixture(autouse=True)
-    def setup_dynamodb_env(self):
-        os.environ["DYNAMODB_ENDPOINT"] = "http://localhost:8002"
-        os.environ["AWS_ACCESS_KEY_ID"] = "dummy"
-        os.environ["AWS_SECRET_ACCESS_KEY"] = "dummy"
-        os.environ["AWS_REGION"] = "us-east-1"
-        os.environ["DYNAMODB_TABLE_NAME"] = "fiis_test"
-
-        import importlib
-
-        from app.config import database
-
-        importlib.reload(database)
-
-        yield
-
     @pytest.fixture
-    def real_repository(self):
+    def real_repository(self, dynamodb_test_config):
         from app.repositories.fii_dynamodb_repository import FiiDynamoDBRepository
+        from app_config import AppConfig
+
+        config = AppConfig()
+        return FiiDynamoDBRepository(config.dynamodb_table_name)
 
         return FiiDynamoDBRepository("fiis_test_scheduler")
 
