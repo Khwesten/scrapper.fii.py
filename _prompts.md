@@ -22,6 +22,11 @@ Regras da arquitetura:
 - Gateway importa Domain e DTO
 - Repository importa Domain e Model
 
+Regras de alterações:
+- Manter a complexidade cognitiva das alterações em um nível aceitável
+- Rode o comando make format ao fim das alterações
+- Rode o comando make test-all para checar se as alterações não quebraram a aplicação
+
 Quero que você:
 - Evite explicações básicas (como “o que é um usecase”)
 - Seja direto ao ponto: diga em 2 linhas o que vai fazer e depois mostre o código

@@ -21,7 +21,8 @@ class FiiScrapeUseCase:
 
     async def execute(self, tickers: List[str] = None) -> List[FiiDomain]:
         fiis = []
-        tickers = tickers or await self.fii_gateway.list()
+        if tickers is None:
+            tickers = await self.fii_gateway.list()
 
         for ticker in tickers:
             fii = await self._get_or_create_with_semaphore(ticker)

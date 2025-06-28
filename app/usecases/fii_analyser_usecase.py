@@ -38,6 +38,9 @@ class FiiAnalyserUsecase:
     async def _get(self, ticker: str) -> FiiDomain:
         fii = await self.fii_repository.get(ticker)
 
+        if fii is None:
+            return None
+
         is_valid = self.fii_validator_factory.build().validate(fii)
 
         if is_valid and fii.dy_12 >= self.percentage and fii.last_dividend > 0 and fii.last_price > 0:
