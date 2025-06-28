@@ -2,8 +2,8 @@ from decimal import Decimal
 from typing import List, Optional, Dict
 
 from app.domain.fii_domain import FiiDomain
-from app.repositories.fii_csv_repository import FiiCSVRepository
 from app.repositories.fii_repository import FiiRepository
+from app.repositories.fii_repository_factory import FiiRepositoryFactory
 from pydantic import BaseModel
 
 
@@ -13,6 +13,7 @@ class MagicNumberResponse(BaseModel):
     quotas_for_invested_value: int
     dividend_for_invested_value: Decimal
     invested_value: int
+    fii: FiiDomain
 
 
 class FiiMagicNumberUseCase:
@@ -22,7 +23,7 @@ class FiiMagicNumberUseCase:
         fii_repository: FiiRepository = None,
     ) -> None:
         self.invested_value = invested_value or 10000
-        self.fii_repository = fii_repository or FiiCSVRepository()
+        self.fii_repository = fii_repository or FiiRepositoryFactory.create()
 
     async def execute(self) -> List[MagicNumberResponse]:
         fiis = await self.fii_repository.list()
@@ -44,4 +45,5 @@ class FiiMagicNumberUseCase:
             "quotas_for_invested_value": quotas_for_invested_value,
             "dividend_for_invested_value": dividend_for_invested_value,
             "invested_value": self.invested_value,
+            "fii": fii,
         })

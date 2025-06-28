@@ -3,8 +3,8 @@ from typing import List, Optional
 
 from app.domain.fii_domain import FiiDomain
 from app.gateways.status_invest_gateway import FiiGateway, StatusInvestGateway
-from app.repositories.fii_csv_repository import FiiCSVRepository
 from app.repositories.fii_repository import FiiRepository
+from app.repositories.fii_repository_factory import FiiRepositoryFactory
 
 
 class FiiScrapeUseCase:
@@ -15,7 +15,7 @@ class FiiScrapeUseCase:
         max_concurrent_requests: Optional[int] = None,
     ) -> None:
         max_concurrent_requests = max_concurrent_requests or 1
-        self.fii_repository = fii_repository or FiiCSVRepository()
+        self.fii_repository = fii_repository or FiiRepositoryFactory.create()
         self.fii_gateway = fii_gateway or StatusInvestGateway()
         self.semaphore = asyncio.Semaphore(max_concurrent_requests)
 
@@ -38,6 +38,7 @@ class FiiScrapeUseCase:
                 return fii
 
             if fii := await self.fii_gateway.get(ticker):
-                return await self.fii_repository.add(fii)
+                await self.fii_repository.add(fii)
+                return fii
 
             return None

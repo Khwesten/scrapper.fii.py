@@ -33,7 +33,7 @@ class StatusInvestGateway(FiiGateway):
     XPATH_DIALY_LIQUIDITY = "/html/body/main/div[2]/div[6]/div/div/div[3]/div/div/div/strong/text()"
     XPATH_QUOTA_HOLDER = "/html/body/main/div[2]/div[5]/div/div[6]/div/div[1]/strong/text()"
     XPATH_QUOTA_QUANTITY = "/html/body/main/div[2]/div[5]/div/div[6]/div/div[2]/span[2]/text()"
-    XPATH_PATRIMONY = "/html/body/main/div[2]/div[5]/div/div[1]/div/div[2]/span[2]/text()"  # TODO
+    XPATH_PATRIMONY = "/html/body/main/div[2]/div[5]/div/div[1]/div/div[2]/span[2]/text()"
 
     def __init__(self, session: ClientSession = None):
         self.session = session or ClientSession()
