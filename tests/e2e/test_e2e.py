@@ -3,7 +3,7 @@ import pytest
 import httpx
 from typing import Dict, Any
 
-BASE_URL = "http://localhost:8001"
+BASE_URL = "http://localhost:8080"
 TIMEOUT = 30.0
 
 class TestFIIScraperE2E:

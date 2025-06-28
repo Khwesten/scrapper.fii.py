@@ -27,11 +27,35 @@ format: ## Format code with black, isort, and autoflake
 
 test: ## Run unit tests
 	@echo "$(BLUE)🧪 Running unit tests...$(NC)"
-	poetry run pytest tests/ -v --ignore=tests/test_e2e.py
+	poetry run pytest tests/unit/ -v
 
-test-e2e: ## Run E2E tests (requires API to be running)
+test-unit: ## Run unit tests only
+	@echo "$(BLUE)🧪 Running unit tests...$(NC)"
+	poetry run pytest tests/unit/ -v
+
+test-integration: ## Run integration tests with DynamoDB
+	@echo "$(BLUE)🧪 Running integration tests...$(NC)"
+	@echo "$(YELLOW)📦 Starting DynamoDB for integration tests...$(NC)"
+	docker-compose --profile integration up -d dynamodb-local
+	@echo "$(YELLOW)⏳ Waiting for DynamoDB to initialize...$(NC)"
+	@sleep 5
+	@echo "$(GREEN)✅ DynamoDB should be ready!$(NC)"
+	poetry run pytest tests/integration/ -v
+	@echo "$(BLUE)🛑 Stopping DynamoDB...$(NC)"
+	docker-compose --profile integration down
+
+test-e2e: ## Run E2E tests with full application
 	@echo "$(BLUE)🧪 Running E2E tests...$(NC)"
-	poetry run python tests/test_e2e.py
+	@echo "$(YELLOW)📦 Starting application and DynamoDB for E2E tests...$(NC)"
+	docker-compose --profile e2e up -d --build
+	@echo "$(YELLOW)⏳ Waiting for application to be ready...$(NC)"
+	@timeout 60 bash -c 'until curl -sf http://localhost:8080/health > /dev/null 2>&1; do sleep 3; done' || (echo "$(RED)❌ Application failed to start$(NC)" && docker-compose --profile e2e logs && exit 1)
+	@echo "$(GREEN)✅ Application is ready!$(NC)"
+	poetry run pytest tests/e2e/ -v
+	@echo "$(BLUE)🛑 Stopping test environment...$(NC)"
+	docker-compose --profile e2e down
+
+test-all: test-unit test-integration test-e2e ## Run all tests (unit, integration, e2e)
 
 run-local: ## Run API locally with Poetry
 	@echo "$(BLUE)🚀 Starting API locally...$(NC)"
@@ -40,17 +64,17 @@ run-local: ## Run API locally with Poetry
 ## Docker Commands
 docker-build: ## Build Docker images
 	@echo "$(BLUE)🐳 Building Docker images...$(NC)"
-	sudo docker-compose build
+	docker-compose build
 
 docker-clean: ## Clean Docker containers and images
 	@echo "$(BLUE)🧹 Cleaning Docker containers...$(NC)"
-	sudo docker-compose down -v
-	sudo docker system prune -f
+	docker-compose down -v
+	docker system prune -f
 
 ## Development Environment
 dev-up: ## Start development environment (API + DynamoDB)
 	@echo "$(BLUE)🚀 Starting development environment...$(NC)"
-	sudo docker-compose --profile dev up --build -d
+	docker-compose --profile dev up --build -d
 	@echo "$(GREEN)✅ Development environment started!$(NC)"
 	@echo "$(YELLOW)📡 API: http://localhost:8001$(NC)"
 	@echo "$(YELLOW)📚 Docs (ReDoc): http://localhost:8001/docs$(NC)"
@@ -58,30 +82,30 @@ dev-up: ## Start development environment (API + DynamoDB)
 
 dev-down: ## Stop development environment
 	@echo "$(BLUE)🛑 Stopping development environment...$(NC)"
-	sudo docker-compose down
+	docker-compose down
 
 dev-logs: ## Show development logs
 	@echo "$(BLUE)📋 Showing development logs...$(NC)"
-	sudo docker-compose logs -f fii-scraper-dev
+	docker-compose logs -f fii-scraper-dev
 
 dev-restart: ## Restart development environment
 	@echo "$(BLUE)🔄 Restarting development environment...$(NC)"
-	sudo docker-compose restart fii-scraper-dev
+	docker-compose restart fii-scraper-dev
 
 ## Production Environment
 prod-up: ## Start production environment
 	@echo "$(BLUE)🚀 Starting production environment...$(NC)"
-	sudo docker-compose up fii-scraper --build -d
+	docker-compose up fii-scraper --build -d
 	@echo "$(GREEN)✅ Production environment started!$(NC)"
 	@echo "$(YELLOW)📡 API: http://localhost:8000$(NC)"
 
 prod-down: ## Stop production environment
 	@echo "$(BLUE)🛑 Stopping production environment...$(NC)"
-	sudo docker-compose down
+	docker-compose down
 
 prod-logs: ## Show production logs
 	@echo "$(BLUE)📋 Showing production logs...$(NC)"
-	sudo docker-compose logs -f fii-scraper
+	docker-compose logs -f fii-scraper
 
 ## API Testing & Health
 health: ## Check API health
@@ -113,10 +137,10 @@ dev-clean: dev-down docker-clean ## Clean everything and start fresh
 ## Monitoring
 monitor: ## Show real-time container status
 	@echo "$(BLUE)📊 Container Status:$(NC)"
-	@sudo docker-compose ps
+	@docker-compose ps
 
 tail-logs: ## Tail all logs
-	@sudo docker-compose logs -f
+	@docker-compose logs -f
 
 ## Quick Commands
 quick-test: dev-up wait-for-api test-e2e dev-down ## Quick test cycle
