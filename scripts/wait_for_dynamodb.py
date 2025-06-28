@@ -9,10 +9,7 @@ import aioboto3
 from app.config.database import DatabaseConfig
 
 
-async def wait_for_dynamodb(max_retries: int = 30, retry_delay: int = 2) -> bool:
-    """
-    Aguarda o DynamoDB estar disponível
-    """
+async def wait_for_dynamodb(max_retries: int = 15, retry_delay: int = 1) -> bool:
     endpoint_url = DatabaseConfig.get_dynamodb_endpoint()
     region = DatabaseConfig.get_aws_region()
 
@@ -31,7 +28,6 @@ async def wait_for_dynamodb(max_retries: int = 30, retry_delay: int = 2) -> bool
                 aws_access_key_id="dummy",
                 aws_secret_access_key="dummy",
             ) as client:
-                # Tenta listar tabelas para verificar se está funcionando
                 response = await client.list_tables()
                 print(f"✅ DynamoDB está pronto! Tabelas existentes: {response.get('TableNames', [])}")
                 return True
@@ -46,9 +42,6 @@ async def wait_for_dynamodb(max_retries: int = 30, retry_delay: int = 2) -> bool
 
 
 async def create_table_if_not_exists():
-    """
-    Cria a tabela 'fiis' se ela não existir
-    """
     endpoint_url = DatabaseConfig.get_dynamodb_endpoint()
     region = DatabaseConfig.get_aws_region()
     table_name = DatabaseConfig.get_dynamodb_table_name()
@@ -66,7 +59,6 @@ async def create_table_if_not_exists():
             aws_secret_access_key="dummy",
         ) as client:
             try:
-                # Tenta descrever a tabela
                 await client.describe_table(TableName=table_name)
                 print(f"✅ Tabela '{table_name}' já existe")
                 return True
@@ -74,7 +66,6 @@ async def create_table_if_not_exists():
             except client.exceptions.ResourceNotFoundException:
                 print(f"🔨 Criando tabela '{table_name}'...")
 
-                # Cria a tabela
                 await client.create_table(
                     TableName=table_name,
                     KeySchema=[{"AttributeName": "ticker", "KeyType": "HASH"}],
@@ -82,7 +73,6 @@ async def create_table_if_not_exists():
                     BillingMode="PAY_PER_REQUEST",
                 )
 
-                # Aguarda a tabela estar ativa
                 print(f"⏳ Aguardando tabela '{table_name}' estar ativa...")
                 waiter = client.get_waiter("table_exists")
                 await waiter.wait(TableName=table_name)
@@ -96,17 +86,12 @@ async def create_table_if_not_exists():
 
 
 async def main():
-    """
-    Função principal
-    """
     print("🚀 Inicializando preparação do DynamoDB...")
 
-    # Aguarda DynamoDB estar pronto
     if not await wait_for_dynamodb():
         print("❌ Falha ao conectar com DynamoDB")
         exit(1)
 
-    # Cria tabela se necessário
     if not await create_table_if_not_exists():
         print("❌ Falha ao criar/verificar tabela")
         exit(1)
