@@ -4,7 +4,6 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 
-
 # Global fixtures to consolidate common mocks
 @pytest.fixture
 def fii_domain_sample():
