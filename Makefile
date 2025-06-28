@@ -25,6 +25,12 @@ format: ## Format code with black, isort, and autoflake
 	poetry run isort .
 	poetry run autoflake --in-place --remove-all-unused-imports --remove-unused-variables --recursive -v .
 
+format-check: ## Check code formatting without applying changes
+	@echo "$(BLUE)🔍 Checking code formatting...$(NC)"
+	poetry run black --check .
+	poetry run isort --check-only .
+	poetry run autoflake --check --remove-all-unused-imports --remove-unused-variables --recursive .
+
 test: ## Run unit tests
 	@echo "$(BLUE)🧪 Running unit tests...$(NC)"
 	poetry run pytest tests/unit/ -v
