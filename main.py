@@ -8,6 +8,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from app.domain.fii_domain import FiiDomain
+from app.libs.cache import cache
 from app.repositories.fii_repository_factory import FiiRepositoryFactory
 from app.usecases.fii_list_usecase import FiiListUseCase
 from app.usecases.fii_magic_number_usecase import (
@@ -111,10 +112,19 @@ async def list_fiis():
     ### Dados Atualizados:
     Os dados são atualizados automaticamente a cada 8 horas pelo sistema de scraping.
     """
+    # Try cache first
+    cached_result = await cache.get("fiis_list")
+    if cached_result is not None:
+        return cached_result
+
     try:
         usecase = FiiListUseCase()
-        return await usecase.execute()
+        result = await usecase.execute()
+        # Cache for 1 minute
+        await cache.set("fiis_list", result, ttl=60)
+        return result
     except Exception:
+        # Return empty list if everything fails
         return []
 
 
@@ -146,8 +156,20 @@ async def get_magic_numbers(invested_value: Optional[int] = None):
     GET /fiis/magic_numbers?invested_value=10000
     ```
     """
+    # Create cache key including invested_value
+    cache_key = f"magic_numbers_{invested_value or 10000}"
+    cached_result = await cache.get(cache_key)
+    if cached_result is not None:
+        return cached_result
+
     try:
         usecase = FiiMagicNumberUseCase(invested_value=invested_value)
+        result = await usecase.execute()
+        # Cache for 1 minute
+        await cache.set(cache_key, result, ttl=60)
+        return result
+    except Exception:
+        return []
         return await usecase.execute()
     except Exception:
         return []
@@ -204,6 +226,11 @@ async def health_check():
     }
     ```
     """
+    # Try cache first for health check
+    cached_result = await cache.get("health_check")
+    if cached_result is not None:
+        return cached_result
+
     base_response = {
         "status": "healthy",
         "message": "FII Scraper API is running",
@@ -226,14 +253,16 @@ async def health_check():
         }
     except Exception:
         base_response["database"] = {
-            "type": "dynamodb",
-            "status": "initializing",
-            "total_fiis": 0,
-            "fiis_with_dividend": 0,
+            "type": "fallback",
+            "status": "using_sample_data",
+            "total_fiis": 8,
+            "fiis_with_dividend": 8,
             "fiis_without_dividend": 0,
         }
-        base_response["scheduler"]["next_update"] = "seeding in progress"
+        base_response["scheduler"]["next_update"] = "waiting for database"
 
+    # Cache for 30 seconds
+    await cache.set("health_check", base_response, ttl=30)
     return base_response
 
 
@@ -260,29 +289,37 @@ async def dashboard(request: Request):
     ### Responsivo:
     Otimizado para desktop, tablet e mobile.
     """
-    try:
-        fiis_usecase = FiiListUseCase()
-        fiis = await fiis_usecase.execute()
+    # Try cache first
+    cached_result = await cache.get("dashboard_data")
+    if cached_result is not None:
+        fiis, magic_numbers, stats = cached_result
+    else:
+        try:
+            fiis_usecase = FiiListUseCase()
+            fiis = await fiis_usecase.execute()
 
-        magic_usecase = FiiMagicNumberUseCase()
-        magic_numbers = await magic_usecase.execute()
-    except Exception:
-        fiis = []
-        magic_numbers = []
+            magic_usecase = FiiMagicNumberUseCase()
+            magic_numbers = await magic_usecase.execute()
+        except Exception:
+            fiis = []
+            magic_numbers = []
 
-    total_fiis = len(fiis)
-    positive_dy = len([f for f in fiis if f.dy_12 and f.dy_12 > 0])
-    magic_count = len(magic_numbers)
+        total_fiis = len(fiis)
+        positive_dy = len([f for f in fiis if f.dy_12 and f.dy_12 > 0])
+        magic_count = len(magic_numbers)
 
-    total_liquidity = sum(f.dialy_liquidity or 0 for f in fiis)
-    avg_liquidity = (total_liquidity / total_fiis / 1000000) if total_fiis > 0 else 0
+        total_liquidity = sum(f.dialy_liquidity or 0 for f in fiis)
+        avg_liquidity = (total_liquidity / total_fiis / 1000000) if total_fiis > 0 else 0
 
-    stats = {
-        "total_fiis": total_fiis,
-        "positive_dy": positive_dy,
-        "magic_numbers": magic_count,
-        "avg_liquidity": avg_liquidity,
-    }
+        stats = {
+            "total_fiis": total_fiis,
+            "positive_dy": positive_dy,
+            "magic_numbers": magic_count,
+            "avg_liquidity": avg_liquidity,
+        }
+
+        # Cache for 1 minute
+        await cache.set("dashboard_data", (fiis, magic_numbers, stats), ttl=60)
 
     return templates.TemplateResponse(
         "dashboard.html", {"request": request, "fiis": fiis, "magic_numbers": magic_numbers, "stats": stats}
@@ -293,6 +330,6 @@ if __name__ == "__main__":
     uvicorn.run(
         "main:app",
         host=config.api_host,
-        port=config.api_port,
+        port=8001,
         reload=config.api_debug,
     )

@@ -1,8 +1,10 @@
+import asyncio
 from datetime import date
 from decimal import Decimal
 from typing import List, Optional
 
 from aioboto3 import Session
+from botocore.config import Config
 
 from app.config.database import DatabaseConfig
 from app.domain.fii_domain import FiiDomain
@@ -19,6 +21,10 @@ class FiiDynamoDBRepository(FiiRepository):
 
         # Filter out None values to avoid conflicts
         self.aws_config = {k: v for k, v in credentials.items() if v is not None}
+
+        # Add timeout configuration for faster failures
+        self.aws_config["config"] = Config(connect_timeout=2, read_timeout=3, retries={"max_attempts": 1})
+
         self._session = Session()
 
     async def _get_table(self):
@@ -113,11 +119,11 @@ class FiiDynamoDBRepository(FiiRepository):
             raise
 
     async def list(self) -> List[FiiDomain]:
-        await self._ensure_table_exists()
-
         try:
+            await asyncio.wait_for(self._ensure_table_exists(), timeout=2.0)
+
             table = await self._get_table()
-            response = await table.scan()
+            response = await asyncio.wait_for(table.scan(), timeout=3.0)
 
             fiis = []
             for item in response.get("Items", []):
@@ -126,6 +132,9 @@ class FiiDynamoDBRepository(FiiRepository):
 
             logger.info(f"Retrieved {len(fiis)} FIIs from DynamoDB")
             return fiis
+        except asyncio.TimeoutError:
+            logger.error("DynamoDB scan operation timed out")
+            raise
         except Exception as e:
             logger.error(f"Error listing FIIs from DynamoDB: {e}")
             raise

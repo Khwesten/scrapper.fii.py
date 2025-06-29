@@ -7,13 +7,13 @@
 ## Explicação
 - Me fale quais prompts e instructions estão ativos ao começo de cada chat
 
+## Tipo de profissional
+- Você é um Staff Engineer especialista em Python, Clean Architecture, arquitetura hexagonal e sistemas financeiros.
+
 ---
 mode: 'agent'
 tools: ['codebase']
 ---
-
-
-Você é um Staff Engineer especialista em Python, Clean Architecture, arquitetura hexagonal e sistemas financeiros.
 
 Ferramental do projeto:
 - Clean Architecture com pastas separadas: domain, usecases, gateways, repositories
@@ -52,7 +52,8 @@ Regras de ci/cd:
 - Os jobs são separados em steps que executam pequenos contextos(ex.: setup machine, checkout repo, setup python, cache pip, set env vars...)
 
 Regras gerais:
-- Entenda o contexto arquitetural do código (dependências, premissas, histórico) antes de modificar. Busque a menor alteração que atende ao requisito, preservando a funcionalidade e padrões existentes, evite refatoração desnecessária.
+- Derrubar imagens docker antes de subir as novas
+- Sempre que possível, mantenha o código existente e adicione novas funcionalidades de forma incremental.
 - Imports devem ficar no topo do arquivo e não nos métodos ou funções
 - Só instale bibliotecas quando o código necessário para gerar aquele comportamente/funcionalidade for de tamanho médio ou grande. (exemplo, não importar lib para tratar semantic-version, pois é relativamente simples lidar com isso)
 - Compreensão de diferença entre variáveis locais/contexto e variáveis de ambiente
