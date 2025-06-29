@@ -27,16 +27,6 @@ class TestFIIScraperE2E:
         assert "scheduler" in data
 
     @pytest.mark.asyncio
-    async def test_status_endpoint(self, client):
-        response = await client.get("/status")
-
-        assert response.status_code == 200
-        data = response.json()
-        assert "status" in data
-        assert "database" in data
-        assert "services" in data
-
-    @pytest.mark.asyncio
     async def test_list_fiis(self, client):
         response = await client.get("/fiis")
 

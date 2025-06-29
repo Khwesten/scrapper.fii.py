@@ -1,3 +1,7 @@
+---
+applyTo: '.github/workflows/*.yml'
+---
+
 Regras de ci/cd:
 - Utilizamos github actions
 - O pipeline deve seguir a seguinte ordem

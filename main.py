@@ -284,46 +284,6 @@ async def dashboard(request: Request):
     )
 
 
-@app.get("/status", tags=["Status"])
-async def status():
-    """
-    ## 📈 Status do Sistema
-
-    Endpoint de status detalhado para monitoramento da aplicação.
-
-    ### Informações Retornadas:
-    - **Status Geral**: Saúde da aplicação
-    - **Database**: Status da conexão com DynamoDB
-    - **Estatísticas**: Números totais de registros
-    - **Última Atualização**: Timestamp da última operação
-
-    ### Status Codes:
-    - **healthy**: Sistema funcionando normalmente
-    - **degraded**: Sistema com problemas parciais
-    - **unhealthy**: Sistema com falhas críticas
-    """
-    try:
-        # Test database connection
-        fiis_usecase = FiiListUseCase()
-        fiis = await fiis_usecase.execute()
-
-        return {
-            "status": "healthy",
-            "timestamp": "2024-01-15T10:30:00Z",
-            "version": "2.0.0",
-            "database": {"type": "dynamodb", "status": "healthy", "total_fiis": len(fiis)},
-            "services": {"scraper": "healthy", "scheduler": "healthy", "api": "healthy"},
-        }
-    except Exception as e:
-        return {
-            "status": "unhealthy",
-            "timestamp": "2024-01-15T10:30:00Z",
-            "version": "2.0.0",
-            "error": str(e),
-            "database": {"type": "dynamodb", "status": "error", "error": str(e)},
-        }
-
-
 if __name__ == "__main__":
     uvicorn.run(
         "main:app",

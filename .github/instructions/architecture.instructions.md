@@ -1,5 +1,5 @@
 ---
-applyTo: '**/*.py'
+applyTo: 'app/*.py'
 ---
 
 Regras da arquitetura:
