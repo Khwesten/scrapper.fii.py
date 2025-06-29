@@ -1,9 +1,7 @@
 from decimal import Decimal
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-
-from conftest import *  # Import global fixtures if available
 
 
 # Global fixtures to consolidate common mocks
@@ -34,8 +32,6 @@ def mock_repository_empty():
 
 @pytest.fixture
 def mock_gateway():
-    from unittest.mock import AsyncMock
-
     from app.gateways.status_invest_gateway import FiiGateway
 
     gateway = MagicMock(spec=FiiGateway)
@@ -45,9 +41,24 @@ def mock_gateway():
     return gateway
 
 
-# Fixture to mock external dependencies globally
-@pytest.fixture(autouse=True)
-def mock_external_deps():
-    with patch("app.repositories.fii_repository_factory.FiiRepositoryFactory.create") as mock_factory:
-        mock_factory.return_value = MagicMock()
-        yield mock_factory
+# Mock DynamoDB repository for unit tests
+@pytest.fixture
+def mock_dynamodb_repository():
+    from app.repositories.fii_dynamodb_repository import FiiDynamoDBRepository
+
+    repository = MagicMock(spec=FiiDynamoDBRepository)
+    repository.add = AsyncMock(return_value=None)
+    repository.get = AsyncMock(return_value=None)
+    repository.list = AsyncMock(return_value=[])
+    repository.update = AsyncMock(return_value=None)
+    return repository
+
+
+# Real repository fixture for integration tests only
+@pytest.fixture
+def real_repository(dynamodb_test_config):
+    from app.repositories.fii_dynamodb_repository import FiiDynamoDBRepository
+    from app_config import AppConfig
+
+    config = AppConfig()
+    return FiiDynamoDBRepository(config.dynamodb_table_name)

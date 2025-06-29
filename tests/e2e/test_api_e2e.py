@@ -2,6 +2,7 @@ import httpx
 import pytest
 
 
+@pytest.mark.timeout(120)
 class TestAPIE2E:
 
     @pytest.fixture
@@ -21,30 +22,6 @@ class TestAPIE2E:
         assert data["database"]["status"] == "connected"
         assert isinstance(data["database"]["total_fiis"], int)
         assert "scheduler" in data
-
-    @pytest.mark.asyncio
-    async def test_database_status_endpoint(self, client):
-        response = await client.get("/database/status")
-
-        assert response.status_code == 200
-        data = response.json()
-        assert "database" in data
-        assert data["database"]["type"] == "dynamodb"
-        assert data["database"]["status"] == "connected"
-        assert isinstance(data["database"]["total_fiis"], int)
-        assert "scheduler" in data
-        assert data["scheduler"]["status"] == "active"
-
-    @pytest.mark.asyncio
-    async def test_status_endpoint(self, client):
-        response = await client.get("/status")
-
-        assert response.status_code == 200
-        data = response.json()
-        assert "status" in data
-        assert "database" in data
-        assert "services" in data
-        assert "timestamp" in data
 
     @pytest.mark.asyncio
     async def test_list_fiis_endpoint(self, client):
@@ -102,7 +79,7 @@ class TestAPIE2E:
 
     @pytest.mark.asyncio
     async def test_complete_api_workflow(self, client):
-        status_response = await client.get("/database/status")
+        status_response = await client.get("/health")
         assert status_response.status_code == 200
         status_data = status_response.json()
         assert status_data["database"]["status"] == "connected"

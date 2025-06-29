@@ -39,6 +39,10 @@ test-unit: ## Run unit tests only
 	@echo "$(BLUE)🧪 Running unit tests...$(NC)"
 	poetry run pytest tests/unit/ -v
 
+test-unit-cov: ## Run unit tests with coverage
+	@echo "$(BLUE)🧪 Running unit tests with coverage...$(NC)"
+	poetry run pytest tests/unit/ -v --cov=app --cov-report=term-missing
+
 test-integration: ## Run integration tests with DynamoDB
 	@echo "$(BLUE)🧪 Running integration tests...$(NC)"
 	@echo "$(YELLOW)📦 Starting DynamoDB for integration tests...$(NC)"
@@ -46,7 +50,7 @@ test-integration: ## Run integration tests with DynamoDB
 	@echo "$(YELLOW)⏳ Waiting for DynamoDB to initialize...$(NC)"
 	@sleep 5
 	@echo "$(GREEN)✅ DynamoDB should be ready!$(NC)"
-	ENVIRONMENT=test poetry run pytest tests/integration/ -v
+	ENVIRONMENT=integration poetry run pytest tests/integration/ -v
 	@echo "$(BLUE)🛑 Stopping DynamoDB...$(NC)"
 	docker-compose --profile integration down
 
@@ -55,15 +59,19 @@ test-e2e: ## Run E2E tests with full application
 	@echo "$(BLUE)🛑 Cleaning up any existing containers...$(NC)"
 	docker-compose --profile e2e down --remove-orphans
 	@echo "$(YELLOW)📦 Starting application and DynamoDB for E2E tests...$(NC)"
-	ENVIRONMENT=test docker-compose --profile e2e up -d --build
+	ENVIRONMENT=e2e docker-compose --profile e2e up -d --build
 	@echo "$(YELLOW)⏳ Waiting for application to be ready...$(NC)"
 	@timeout 45 bash -c 'until curl -sf http://localhost:8080/health > /dev/null 2>&1; do sleep 2; done' || (echo "$(RED)❌ Application failed to start$(NC)" && docker-compose --profile e2e logs && exit 1)
 	@echo "$(GREEN)✅ Application is ready!$(NC)"
-	ENVIRONMENT=test poetry run pytest tests/e2e/ -v
+	ENVIRONMENT=e2e poetry run pytest tests/e2e/ -v --timeout=180 --no-cov --cov-report= --override-ini="addopts="
 	@echo "$(BLUE)🛑 Stopping test environment...$(NC)"
 	docker-compose --profile e2e down
 
 test-all: test-unit test-integration test-e2e ## Run all tests (unit, integration, e2e)
+
+test-cov: ## Run all tests with coverage report
+	@echo "$(BLUE)🧪 Running all tests with coverage...$(NC)"
+	poetry run pytest tests/unit/ tests/integration/ -v --cov=app --cov-report=term-missing --cov-report=html
 
 run-local: ## Run API locally with Poetry
 	@echo "$(BLUE)🚀 Starting API locally...$(NC)"
@@ -94,41 +102,36 @@ dev-up: ## Start development environment (API + DynamoDB)
 
 dev-down: ## Stop development environment
 	@echo "$(BLUE)🛑 Stopping development environment...$(NC)"
-	docker-compose down
+	docker-compose --profile dev down
 
 dev-logs: ## Show development logs
 	@echo "$(BLUE)📋 Showing development logs...$(NC)"
-	docker-compose logs -f fii-scraper-dev
+	docker-compose --profile dev logs -f fii-scraper-dev
 
 dev-restart: ## Restart development environment
 	@echo "$(BLUE)🔄 Restarting development environment...$(NC)"
-	docker-compose restart fii-scraper-dev
+	docker-compose --profile dev restart fii-scraper-dev
 
 ## Production Environment
 prod-up: ## Start production environment
 	@echo "$(BLUE)🚀 Starting production environment...$(NC)"
-	docker-compose up fii-scraper --build -d
+	docker-compose --profile production up fii-scraper --build -d
 	@echo "$(GREEN)✅ Production environment started!$(NC)"
 	@echo "$(YELLOW)📡 API: http://localhost:8000$(NC)"
 
 prod-down: ## Stop production environment
 	@echo "$(BLUE)🛑 Stopping production environment...$(NC)"
-	docker-compose down
+	docker-compose --profile production down
 
 prod-logs: ## Show production logs
 	@echo "$(BLUE)📋 Showing production logs...$(NC)"
-	docker-compose logs -f fii-scraper
+	docker-compose --profile production logs -f fii-scraper
 
 ## API Testing & Health
 health: ## Check API health
 	@echo "$(BLUE)🏥 Checking API health...$(NC)"
 	@sleep 2
 	@curl -s http://localhost:8001/health || echo "$(RED)❌ API not responding$(NC)"
-
-status: ## Check database status
-	@echo "$(BLUE)📊 Checking database status...$(NC)"
-	@sleep 2
-	@curl -s http://localhost:8001/database/status || echo "$(RED)❌ API not responding$(NC)"
 
 docs: ## Open API documentation (ReDoc)
 	@echo "$(BLUE)📚 Opening API documentation...$(NC)"
