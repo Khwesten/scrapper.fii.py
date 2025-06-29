@@ -102,30 +102,30 @@ dev-up: ## Start development environment (API + DynamoDB)
 
 dev-down: ## Stop development environment
 	@echo "$(BLUE)🛑 Stopping development environment...$(NC)"
-	docker-compose down
+	docker-compose --profile dev down
 
 dev-logs: ## Show development logs
 	@echo "$(BLUE)📋 Showing development logs...$(NC)"
-	docker-compose logs -f fii-scraper-dev
+	docker-compose --profile dev logs -f fii-scraper-dev
 
 dev-restart: ## Restart development environment
 	@echo "$(BLUE)🔄 Restarting development environment...$(NC)"
-	docker-compose restart fii-scraper-dev
+	docker-compose --profile dev restart fii-scraper-dev
 
 ## Production Environment
 prod-up: ## Start production environment
 	@echo "$(BLUE)🚀 Starting production environment...$(NC)"
-	docker-compose up fii-scraper --build -d
+	docker-compose --profile production up fii-scraper --build -d
 	@echo "$(GREEN)✅ Production environment started!$(NC)"
 	@echo "$(YELLOW)📡 API: http://localhost:8000$(NC)"
 
 prod-down: ## Stop production environment
 	@echo "$(BLUE)🛑 Stopping production environment...$(NC)"
-	docker-compose down
+	docker-compose --profile production down
 
 prod-logs: ## Show production logs
 	@echo "$(BLUE)📋 Showing production logs...$(NC)"
-	docker-compose logs -f fii-scraper
+	docker-compose --profile production logs -f fii-scraper
 
 ## API Testing & Health
 health: ## Check API health

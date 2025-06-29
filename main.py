@@ -111,8 +111,11 @@ async def list_fiis():
     ### Dados Atualizados:
     Os dados são atualizados automaticamente a cada 8 horas pelo sistema de scraping.
     """
-    usecase = FiiListUseCase()
-    return await usecase.execute()
+    try:
+        usecase = FiiListUseCase()
+        return await usecase.execute()
+    except Exception:
+        return []
 
 
 @app.get("/fiis/magic_numbers", response_model=List[MagicNumberResponse], tags=["FIIs", "Análise"])
@@ -143,8 +146,11 @@ async def get_magic_numbers(invested_value: Optional[int] = None):
     GET /fiis/magic_numbers?invested_value=10000
     ```
     """
-    usecase = FiiMagicNumberUseCase(invested_value=invested_value)
-    return await usecase.execute()
+    try:
+        usecase = FiiMagicNumberUseCase(invested_value=invested_value)
+        return await usecase.execute()
+    except Exception:
+        return []
 
 
 @app.get("/health", tags=["Sistema", "Monitoramento"])
@@ -198,6 +204,12 @@ async def health_check():
     }
     ```
     """
+    base_response = {
+        "status": "healthy",
+        "message": "FII Scraper API is running",
+        "scheduler": {"status": "active", "next_update": "every 8 hours", "auto_discovery": "enabled"},
+    }
+
     try:
         repository = FiiRepositoryFactory.create()
         fiis = await repository.list()
@@ -205,31 +217,24 @@ async def health_check():
         total_fiis = len(fiis)
         fiis_with_dividend = len([f for f in fiis if f.dy_12 and f.dy_12 > 0])
 
-        return {
-            "status": "healthy",
-            "message": "FII Scraper API is running",
-            "database": {
-                "type": "dynamodb",
-                "status": "connected",
-                "total_fiis": total_fiis,
-                "fiis_with_dividend": fiis_with_dividend,
-                "fiis_without_dividend": total_fiis - fiis_with_dividend,
-            },
-            "scheduler": {"status": "active", "next_update": "every 8 hours", "auto_discovery": "enabled"},
+        base_response["database"] = {
+            "type": "dynamodb",
+            "status": "connected",
+            "total_fiis": total_fiis,
+            "fiis_with_dividend": fiis_with_dividend,
+            "fiis_without_dividend": total_fiis - fiis_with_dividend,
         }
     except Exception:
-        return {
-            "status": "healthy",
-            "message": "FII Scraper API is running - seeding in progress",
-            "database": {
-                "type": "dynamodb",
-                "status": "connected",
-                "total_fiis": 0,
-                "fiis_with_dividend": 0,
-                "fiis_without_dividend": 0,
-            },
-            "scheduler": {"status": "active", "next_update": "seeding in progress", "auto_discovery": "enabled"},
+        base_response["database"] = {
+            "type": "dynamodb",
+            "status": "initializing",
+            "total_fiis": 0,
+            "fiis_with_dividend": 0,
+            "fiis_without_dividend": 0,
         }
+        base_response["scheduler"]["next_update"] = "seeding in progress"
+
+    return base_response
 
 
 @app.get("/dashboard", response_class=HTMLResponse, tags=["Dashboard"])
