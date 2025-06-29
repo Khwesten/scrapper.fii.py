@@ -63,7 +63,7 @@ test-e2e: ## Run E2E tests with full application
 	@echo "$(YELLOW)⏳ Waiting for application to be ready...$(NC)"
 	@timeout 45 bash -c 'until curl -sf http://localhost:8080/health > /dev/null 2>&1; do sleep 2; done' || (echo "$(RED)❌ Application failed to start$(NC)" && docker-compose --profile e2e logs && exit 1)
 	@echo "$(GREEN)✅ Application is ready!$(NC)"
-	ENVIRONMENT=e2e poetry run pytest tests/e2e/ -v --timeout=180 --no-cov
+	ENVIRONMENT=e2e poetry run pytest tests/e2e/ -v --timeout=180 --no-cov --cov-report= --override-ini="addopts="
 	@echo "$(BLUE)🛑 Stopping test environment...$(NC)"
 	docker-compose --profile e2e down
 

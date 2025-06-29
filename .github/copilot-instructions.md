@@ -1,0 +1,3 @@
+## Língua
+
+- Responda em português.
