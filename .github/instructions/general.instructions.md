@@ -13,6 +13,7 @@ Regras gerais:
 - Só instale bibliotecas quando o código necessário para gerar aquele comportamente/funcionalidade for de tamanho médio ou grande. (exemplo, não importar lib para tratar semantic-version, pois é relativamente simples lidar com isso)
 - Compreensão de diferença entre variáveis locais/contexto e variáveis de ambiente
 - Se for criar algum arquivo .md com explicações, unificar com o README.md deixando apenas informações necessárias para rodar a aplicação em seus múltiplos ambientes(loca, test, dev e prod)
+- Não alterar as portas da aplicação e do banco
 
 Quero que você:
 - Evite explicações básicas (como “o que é um usecase”)

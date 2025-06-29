@@ -147,12 +147,17 @@ async def get_magic_numbers(invested_value: Optional[int] = None):
     return await usecase.execute()
 
 
-@app.get("/database/status", tags=["Sistema", "Monitoramento"])
-async def get_database_status():
+@app.get("/health", tags=["Sistema", "Monitoramento"])
+async def health_check():
     """
-    ## 📊 Status Detalhado do Sistema
+    ## 🏥 Health Check Completo
 
-    Retorna informações detalhadas sobre o estado do banco de dados e sistema de scraping.
+    Verifica a saúde geral da API, incluindo conectividade com banco de dados e status do scheduler.
+
+    ### Verificações Realizadas:
+    - ✅ **API Status**: Se a aplicação está rodando
+    - ✅ **Database**: Conectividade e contagem de dados
+    - ✅ **Scheduler**: Status do sistema automático
 
     ### Informações do Banco:
     - **type**: Tipo do banco (DynamoDB)
@@ -165,52 +170,6 @@ async def get_database_status():
     - **status**: Status do sistema automático
     - **next_update**: Frequência de atualizações
     - **auto_discovery**: Status da descoberta automática
-
-    ### Uso:
-    Ideal para monitoramento da saúde do sistema e verificação de dados disponíveis.
-    """
-    try:
-        repository = FiiRepositoryFactory.create()
-        fiis = await repository.list()
-
-        total_fiis = len(fiis)
-        fiis_with_dividend = len([f for f in fiis if f.dy_12 and f.dy_12 > 0])
-
-        return {
-            "database": {
-                "type": "dynamodb",
-                "status": "connected",
-                "total_fiis": total_fiis,
-                "fiis_with_dividend": fiis_with_dividend,
-                "fiis_without_dividend": total_fiis - fiis_with_dividend,
-            },
-            "scheduler": {"status": "active", "next_update": "every 8 hours", "auto_discovery": "enabled"},
-        }
-    except Exception:
-        return {
-            "database": {
-                "type": "dynamodb",
-                "status": "connected",
-                "total_fiis": 0,
-                "fiis_with_dividend": 0,
-                "fiis_without_dividend": 0,
-            },
-            "scheduler": {"status": "active", "next_update": "seeding in progress", "auto_discovery": "enabled"},
-            "message": "Database is being seeded in background",
-        }
-
-
-@app.get("/health", tags=["Sistema", "Monitoramento"])
-async def health_check():
-    """
-    ## 🏥 Health Check Completo
-
-    Verifica a saúde geral da API, incluindo conectividade com banco de dados e status do scheduler.
-
-    ### Verificações Realizadas:
-    - ✅ **API Status**: Se a aplicação está rodando
-    - ✅ **Database**: Conectividade e contagem de dados
-    - ✅ **Scheduler**: Status do sistema automático
 
     ### Códigos de Resposta:
     - **200**: Sistema saudável e funcionando
@@ -227,9 +186,15 @@ async def health_check():
         "database": {
             "type": "dynamodb",
             "status": "connected",
-            "total_fiis": 150
+            "total_fiis": 150,
+            "fiis_with_dividend": 120,
+            "fiis_without_dividend": 30
         },
-        "scheduler": "active"
+        "scheduler": {
+            "status": "active",
+            "next_update": "every 8 hours",
+            "auto_discovery": "enabled"
+        }
     }
     ```
     """
@@ -237,18 +202,33 @@ async def health_check():
         repository = FiiRepositoryFactory.create()
         fiis = await repository.list()
 
+        total_fiis = len(fiis)
+        fiis_with_dividend = len([f for f in fiis if f.dy_12 and f.dy_12 > 0])
+
         return {
             "status": "healthy",
             "message": "FII Scraper API is running",
-            "database": {"type": "dynamodb", "status": "connected", "total_fiis": len(fiis)},
-            "scheduler": "active",
+            "database": {
+                "type": "dynamodb",
+                "status": "connected",
+                "total_fiis": total_fiis,
+                "fiis_with_dividend": fiis_with_dividend,
+                "fiis_without_dividend": total_fiis - fiis_with_dividend,
+            },
+            "scheduler": {"status": "active", "next_update": "every 8 hours", "auto_discovery": "enabled"},
         }
     except Exception:
         return {
             "status": "healthy",
             "message": "FII Scraper API is running - seeding in progress",
-            "database": {"type": "dynamodb", "status": "connected", "total_fiis": 0},
-            "scheduler": "active",
+            "database": {
+                "type": "dynamodb",
+                "status": "connected",
+                "total_fiis": 0,
+                "fiis_with_dividend": 0,
+                "fiis_without_dividend": 0,
+            },
+            "scheduler": {"status": "active", "next_update": "seeding in progress", "auto_discovery": "enabled"},
         }
 
 

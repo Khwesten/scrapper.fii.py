@@ -27,19 +27,6 @@ class TestFIIScraperE2E:
         assert "scheduler" in data
 
     @pytest.mark.asyncio
-    async def test_database_status(self, client):
-        response = await client.get("/database/status")
-
-        assert response.status_code == 200
-        data = response.json()
-        assert "database" in data
-        assert data["database"]["type"] == "dynamodb"
-        assert data["database"]["status"] == "connected"
-        assert isinstance(data["database"]["total_fiis"], int)
-        assert "scheduler" in data
-        assert data["scheduler"]["status"] == "active"
-
-    @pytest.mark.asyncio
     async def test_status_endpoint(self, client):
         response = await client.get("/status")
 
@@ -105,7 +92,7 @@ class TestFIIScraperE2E:
 
     @pytest.mark.asyncio
     async def test_complete_workflow(self, client):
-        status_response = await client.get("/database/status")
+        status_response = await client.get("/health")
         assert status_response.status_code == 200
         status_data = status_response.json()
         assert status_data["database"]["status"] == "connected"

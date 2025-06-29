@@ -138,8 +138,7 @@ export AWS_SECRET_ACCESS_KEY=your_secret_key
 
 | Endpoint | Método | Descrição |
 |----------|--------|-----------|
-| `/health` | GET | Health check com status de banco e scheduler |
-| `/database/status` | GET | Status detalhado do banco e estatísticas |
+| `/health` | GET | Health check completo com dados do banco e scheduler |
 | `/fiis` | GET | Lista todos os FIIs |
 | `/fiis/magic_numbers` | GET | Cálculo de magic numbers |
 | `/docs` | GET | Documentação interativa (ReDoc) |
@@ -158,9 +157,6 @@ export AWS_SECRET_ACCESS_KEY=your_secret_key
 ```bash
 # Health check completo (ambiente local)
 curl http://localhost:8001/health
-
-# Status do banco
-curl http://localhost:8001/database/status
 
 # Listar FIIs
 curl http://localhost:8001/fiis

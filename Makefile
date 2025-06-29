@@ -133,11 +133,6 @@ health: ## Check API health
 	@sleep 2
 	@curl -s http://localhost:8001/health || echo "$(RED)❌ API not responding$(NC)"
 
-status: ## Check database status
-	@echo "$(BLUE)📊 Checking database status...$(NC)"
-	@sleep 2
-	@curl -s http://localhost:8001/database/status || echo "$(RED)❌ API not responding$(NC)"
-
 docs: ## Open API documentation (ReDoc)
 	@echo "$(BLUE)📚 Opening API documentation...$(NC)"
 	@echo "$(YELLOW)🌐 ReDoc: http://localhost:8001/docs$(NC)"

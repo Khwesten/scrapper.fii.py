@@ -1,7 +1,5 @@
 ---
-applyTo: tests
-title: Regras de testes
-description: Este documento contém as regras e diretrizes para a escrita e execução de testes no projeto.
+applyTo: '**/test_*.py'
 ---
 
 Regras de testes:

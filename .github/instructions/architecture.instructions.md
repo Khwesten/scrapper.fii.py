@@ -1,3 +1,7 @@
+---
+applyTo: '**/*.py'
+---
+
 Regras da arquitetura:
 - Domain não importa nada
 - Usecases importam Domain, Gateway e Repository
